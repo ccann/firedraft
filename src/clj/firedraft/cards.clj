@@ -103,3 +103,7 @@
        set-code         (find-first #(= set-code (:set-code %)) printings)
        ;; take an arbitrary printing
        :else            (first printings)))))
+
+;; (map get-card
+;;      (-> (slurp "/Users/cody/Downloads/TheCube.txt")
+;;          (str/split-lines)))

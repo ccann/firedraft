@@ -11,7 +11,8 @@
     [firedraft.events]
     [reitit.core :as reitit]
     [reitit.frontend.easy :as rfe]
-    [clojure.string :as string])
+    [clojure.string :as string]
+    [firedraft.channel-socket :as chsk])
   (:import goog.History))
 
 (defn nav-link [uri title page]
@@ -20,7 +21,7 @@
     :class (when (= page @(rf/subscribe [:common/page])) :is-active)}
    title])
 
-(defn navbar [] 
+(defn navbar []
   (r/with-let [expanded? (r/atom false)]
               [:nav.navbar.is-info>div.container
                [:div.navbar-brand
@@ -49,7 +50,22 @@
   (if-let [page @(rf/subscribe [:common/page])]
     [:div
      [navbar]
+     [:button {:type "button" :id "btn1"
+               :on-click
+               (fn []
+                 (js/console.log "create game?")
+                 (chsk/chsk-send!
+                  [:room/create
+                   {:title "Our Fun Game"
+                    :game {:mode "winston"
+                           :opts {:booster ["IKO" "IKO" "IKO"
+                                            "IKO" "IKO" "IKO"]}}}]
+                  5000
+                  (fn [reply] (js/console.log (str "reply: " reply)))))}
+      "Click Me!"]
      [page]]))
+
+
 
 (defn navigate! [match _]
   (rf/dispatch [:common/navigate match]))

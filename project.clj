@@ -12,7 +12,7 @@
                  [day8.re-frame/http-fx "0.1.6"]
                  [expound "0.8.4"]
                  [funcool/struct "1.4.0"]
-                 [luminus-aleph "0.1.6"]
+                 [luminus-http-kit "0.1.6"]
                  [luminus-transit "0.1.2"]
                  [luminus/ring-ttl-session "0.3.3"]
                  [markdown-clj "1.10.2"]
@@ -37,7 +37,12 @@
                  [clj-http "3.10.0"]
                  [camel-snake-kebab "0.4.1"]
                  [metosin/jsonista "0.2.5"]
-                 [medley "1.3.0"]]
+                 [medley "1.3.0"]
+                 [com.taoensso/sente "1.15.0"]
+                 [org.clojure/spec.alpha "0.2.187"]
+                 ;; [buddy/buddy-core "1.6.0"]
+                 [crypto-random "1.2.0"]
+                 [com.taoensso/encore "2.119.0"]]
 
   :min-lein-version "2.0.0"
 
