@@ -2,7 +2,8 @@
   (:require [clojure.string :as str]
             [firedraft.common :as com]
             [firedraft.ws :as ws]
-            [reagent.core :as r]))
+            [reagent.core :as r]
+            [taoensso.timbre :as log]))
 
 (defn pack-controls
   [session]
@@ -98,8 +99,10 @@
                              5000
                              (fn [data]
                                (js/console.log "join room reply: " (pr-str data))
-                               (reset! room data)
-                               (swap! session assoc :page :room)))}
+                               (if (:error data)
+                                 (log/error [:room/join (:error data)])
+                                 (do (reset! room data)
+                                     (swap! session assoc :page :room)))))}
        "Join Room"]]]]])
 
 (defn page [session]

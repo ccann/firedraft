@@ -20,7 +20,7 @@
   :start (atom {}))
 
 (defn new-id []
-  (random/base64 32))
+  (random/hex 16))
 
 (defn join-room
   [{:keys [event client-id ?reply-fn]}]
@@ -32,7 +32,8 @@
         (let [room (update room :players conj client-id)]
           (log/info "join room:" room)
           (?reply-fn room))
-        (log/error "no such room" (:id data))))))
+        (do (log/error "no such room" (:id data))
+            (?reply-fn {:error :not-found}))))))
 
 (defn create-room
   [{:keys [event client-id ?reply-fn]}]
