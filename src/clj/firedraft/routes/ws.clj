@@ -1,4 +1,4 @@
-(ns firedraft.routes.channel-socket
+(ns firedraft.routes.ws
   (:require [clojure.tools.logging :as log]
             [mount.core :refer [defstate]]
             [ring.middleware.keyword-params :as ring.mw.keyword-params]
@@ -50,7 +50,7 @@
   :stop (chsk-router))
 
 (defn routes []
-  ["/chsk"
+  ["/ws"
    {:middleware [ring.mw.params/wrap-params
                  ring.mw.keyword-params/wrap-keyword-params
                  ;; middleware/wrap-csrf

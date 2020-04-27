@@ -1,7 +1,7 @@
 (ns firedraft.events.core
   (:require [clojure.tools.logging :as log]
             [crypto.random :as random]
-            [firedraft.routes.channel-socket :as chsk]
+            [firedraft.routes.ws :as ws]
             [medley.core :refer [find-first]]
             [mount.core :refer [defstate]]))
 
@@ -22,18 +22,17 @@
 (defn new-id []
   (random/base64 32))
 
-(defn find-room-by-id
-  [room-id]
-  (find-first #(= room-id (:id %)) @*rooms))
-
 (defn join-room
   [{:keys [event client-id ?reply-fn]}]
+  (log/info "handle" (first event) (:id (second event)))
   (let [[_ data] event]
     ;; data is map with room id and player name
     (when ?reply-fn
-      (let [room (find-room-by-id (:room-id data))
-            room (update room :players conj client-id)]
-        (?reply-fn room)))))
+      (if-let [room (get @*rooms (:id data))]
+        (let [room (update room :players conj client-id)]
+          (log/info "join room:" room)
+          (?reply-fn room))
+        (log/error "no such room" (:id data))))))
 
 (defn create-room
   [{:keys [event client-id ?reply-fn]}]
@@ -51,5 +50,5 @@
 
 (defstate event-handlers
   :start
-  (do (defmethod chsk/handle-event :room/create [msg] (create-room msg))
-      (defmethod chsk/handle-event :room/join [msg] (join-room msg))))
+  (do (defmethod ws/handle-event :room/create [msg] (create-room msg))
+      (defmethod ws/handle-event :room/join [msg] (join-room msg))))

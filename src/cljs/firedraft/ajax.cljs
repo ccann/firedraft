@@ -2,8 +2,7 @@
   (:require
     [ajax.core :as ajax]
     [luminus-transit.time :as time]
-    [cognitect.transit :as transit]
-    [re-frame.core :as rf]))
+    [cognitect.transit :as transit]))
 
 (defn local-uri? [{:keys [uri]}]
   (not (re-find #"^\w+?://" uri)))

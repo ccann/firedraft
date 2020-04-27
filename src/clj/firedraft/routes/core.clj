@@ -3,7 +3,7 @@
     [firedraft.middleware :as middleware]
     [firedraft.layout :refer [error-page]]
     [firedraft.routes.home :as home]
-    [firedraft.routes.channel-socket :as chsk]
+    [firedraft.routes.ws :as ws]
     [reitit.ring :as ring]
     [ring.middleware.content-type :refer [wrap-content-type]]
     [ring.middleware.webjars :refer [wrap-webjars]]
@@ -19,7 +19,7 @@
   (ring/ring-handler
    (ring/router
     [(home/routes)
-     (chsk/routes)])
+     (ws/routes)])
    (ring/routes
     (ring/create-resource-handler
      {:path "/"})

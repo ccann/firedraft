@@ -2,7 +2,6 @@
   (:require [clojure.spec.alpha :as s]
             [crypto.random :as random]
             [firedraft.cards :as cards]
-            [firedraft.routes.channel-socket :as chsk]
             [hiccup.core :as hiccup]
             [medley.core :refer [find-first]]
             [mount.core :refer [defstate]]
