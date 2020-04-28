@@ -3,7 +3,8 @@
             [firedraft.common :as com]
             [firedraft.ws :as ws]
             [reagent.core :as r]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [ajax.core :as ajax]))
 
 (defn pack-controls
   [session]
@@ -14,17 +15,6 @@
       [:select
        [:option "IKO"]]]]))
 
-(def game-defaults
-  {"winston" {:mode "winston"
-              :opts {:booster ["IKO" "IKO" "IKO"
-                               "IKO" "IKO" "IKO"]}}
-   "grid" {:mode "grid"
-           :opts {}}})
-
-(def default-game-mode "winston")
-
-(def default-config
-  {:game (get game-defaults default-game-mode)})
 
 (def game-opt-defaults
   {"winston" {:booster ["IKO" "IKO" "IKO"
@@ -38,6 +28,9 @@
 
 (defn section-create-room
   [session room]
+  ;; (ajax/GET "http://localhost:3000/login"
+  ;;     {:handler (fn [m]
+  ;;                 (js/console.log "login" (pr-str m)))})
   (let [winston? (= "winston" (get-in @room [:game :mode]))]
     [:div.section
      [:h1.title "Firedraft"]
@@ -77,7 +70,7 @@
                                (fn [data]
                                  (js/console.log "replied:" (pr-str data))
                                  (reset! room data)
-                                 #_(swap! session assoc :page :room)))}
+                                 (swap! session assoc :page :room)))}
          "Create Room"]]]]]))
 
 (defn section-join-room
@@ -94,15 +87,15 @@
     [:div.field
      [:div.control
       [:button.button.is-link
-       {:on-click #(ws/send! [:room/join
-                              (assoc @room :id (com/elem-val "room-id-input"))]
-                             5000
-                             (fn [data]
-                               (js/console.log "join room reply: " (pr-str data))
-                               (if (:error data)
-                                 (log/error [:room/join (:error data)])
-                                 (do (reset! room data)
-                                     (swap! session assoc :page :room)))))}
+       {:on-click
+        #(ws/send! [:room/join
+                    (assoc @room :id (com/elem-val "room-id-input"))]
+                   5000
+                   (fn [data]
+                     (if (:error data)
+                       (log/error [:room/join (:error data)])
+                       (do (reset! room data)
+                           (swap! session assoc :page :room)))))}
        "Join Room"]]]]])
 
 (defn page [session]
@@ -110,3 +103,11 @@
     [:div
      (section-create-room session room)
      (section-join-room session room)]))
+
+
+(defmethod ws/handle-message :room/joined
+  [{:keys [message]}]
+  (let [players (:players message)]
+    (js/console.log "set players:" (pr-str players))
+    (when-let [players (:players message)]
+      (swap! com/session assoc-in [:room :players] players))))

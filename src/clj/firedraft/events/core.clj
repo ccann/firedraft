@@ -2,7 +2,6 @@
   (:require [clojure.tools.logging :as log]
             [crypto.random :as random]
             [firedraft.routes.ws :as ws]
-            [medley.core :refer [find-first]]
             [mount.core :refer [defstate]]))
 
 ;; {:title "Our Fun Game"
@@ -23,28 +22,31 @@
   (random/hex 16))
 
 (defn join-room
-  [{:keys [event client-id ?reply-fn]}]
+  [{:keys [event uid ?reply-fn]}]
   (log/info "handle" (first event) (:id (second event)))
   (let [[_ data] event]
-    ;; data is map with room id and player name
-    (when ?reply-fn
-      (if-let [room (get @*rooms (:id data))]
-        (let [room (update room :players conj client-id)]
-          (log/info "join room:" room)
-          (?reply-fn room))
-        (do (log/error "no such room" (:id data))
-            (?reply-fn {:error :not-found}))))))
+    (if-let [room (get @*rooms (:id data))]
+      (let [room (update room :players conj uid)
+            players (:players room)]
+        (log/info "join room:" uid)
+        (doseq [uid players]
+          (log/info "send" :room/joined "to" uid)
+          (ws/send! uid [:room/joined room]))
+        (?reply-fn room))
+      (do (log/error "no such room" (:id data))
+          (?reply-fn {:error :not-found})))))
 
 (defn create-room
-  [{:keys [event client-id ?reply-fn]}]
-  (log/info "handle" (first event))
+  [{:keys [event uid ?reply-fn ring-req]}]
+  (log/info "handle" (first event) uid)
   (let [[_ data] event]
+    (log/info "ring session" (:session ring-req))
     ;; data is a room map
     (when ?reply-fn
       (let [id (new-id)
             room (assoc data
                         :id id
-                        :players [client-id])]
+                        :players [uid])]
         (swap! *rooms assoc id room)
         (log/info "create room:" room)
         (?reply-fn room)))))

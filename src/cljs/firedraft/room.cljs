@@ -9,4 +9,10 @@
       [:h1.title "Firedraft"]
       [:p.subtitle "Room ID: "
        [:span.is-family-code.has-background-grey-lighter
-        (:id @room)]]]]))
+        (:id @room)]]
+      [:h2 "Players"]
+      [:div.content
+       [:ol {:type "1"}
+        (for [id (:players @room)]
+          ^{:key id}
+          [:li id])]]]]))
