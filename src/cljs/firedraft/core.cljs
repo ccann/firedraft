@@ -2,7 +2,7 @@
   (:require [clojure.string :as string]
             [firedraft.ajax :as ajax]
             [firedraft.lobby :as lobby]
-            [firedraft.room :as room]
+            [firedraft.game :as game]
             [firedraft.ws :as ws]
             [goog.events :as events]
             [goog.history.EventType :as HistoryEventType]
@@ -13,7 +13,7 @@
 
 (def pages
   {:lobby lobby/page
-   :room room/page})
+   :game game/page})
 
 (defn page []
   ((pages (:page @com/session)) com/session))
@@ -25,7 +25,7 @@
 (def router
   (reitit/router
    [["/" :lobby]
-    ["/room" :room]]))
+    ["/game" :game]]))
 
 (defn match-route [uri]
   (->> (or (not-empty (string/replace uri #"^.*#" "")) "/")

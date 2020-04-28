@@ -27,9 +27,13 @@
 
 (defmulti handle-message :id)
 
+(defmethod handle-message :default
+  [{:keys [id]}]
+  (log/info :unhandled-event id))
+
 (defmethod handle-event :chsk/recv
   [{[event message] :?data}]
-  (log/info "event:" event)
+  (log/info :event event)
   (r/with-let [errors (r/cursor com/session [:errors])]
     (if-let [response-errors (:errors message)]
       (reset! errors response-errors)
@@ -40,15 +44,13 @@
 
 (defmethod handle-event :chsk/state
   [{:keys [?data]}]
-  (.log js/console (str "state changed: " ?data)))
+  (log/info :state-change ?data))
 
 (defmethod handle-event :chsk/handshake
   [{:keys [?data]}]
-  (.log js/console (str "connection established: " ?data)))
+  (log/info :conn-established ?data))
 
-(defmethod handle-event :default
-  [ev-msg]
-  (.log js/console (str "Unhandled event: " (:event ev-msg))))
+(defmethod handle-event :default [_] nil)
 
 (defn event-handler [msg] (handle-event msg))
 

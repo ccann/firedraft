@@ -26,21 +26,39 @@
   [s]
   (keyword (str/replace s #"\s+" "-")))
 
-(defn section-create-room
-  [session room]
-  ;; (ajax/GET "http://localhost:3000/login"
-  ;;     {:handler (fn [m]
-  ;;                 (js/console.log "login" (pr-str m)))})
-  (let [winston? (= "winston" (get-in @room [:game :mode]))]
+(defn- set-game-type!
+  [this session]
+  (swap! session assoc-in [:game :opts]
+         (let [mode (get-in @session [:game :mode])
+               v (-> this com/target-value ->keyword)]
+           {v (get-in game-opt-defaults [mode v])})))
+
+(defn- create-game!
+  [session]
+  (ws/send! [:game/create (:game @session)]
+            5000
+            (fn callback [data]
+              (log/info :game-created (pr-str data))
+              (swap! session assoc :game data)
+              (com/nav! session :game))))
+
+(defn- set-game-mode!
+  [this session]
+  (swap! session assoc-in [:game :mode]
+         (com/target-value this)))
+
+(defn section-create-game
+  [session]
+  (let [winston? (= "winston" (get-in @session [:game :mode]))]
     [:div.section
      [:h1.title "Firedraft"]
      [:p.subtitle "Lobby"]
      [:div.container
-      [:p.subtitle "Create A Room"]
+      [:p.subtitle "Create A Game"]
       [:div.field
-       [:label.label "Game Mode"]
+       [:label.label "Mode"]
        [:div.control
-        {:on-change #(swap! room assoc-in [:game :mode] (com/target-value %))}
+        {:on-change #(set-game-mode! % session)}
         [:div.select
          [:select
           [:option "winston"]
@@ -49,65 +67,62 @@
       (when winston?
         [:div.field
          [:div.field
-          [:label.label "Game Type"]
+          [:label.label "Type"]
           [:div.control
-           {:on-change #(swap! room assoc-in [:game :opts]
-                               (let [mode (get-in @room [:game :mode])
-                                     v (-> % com/target-value ->keyword)]
-                                 {v (get-in game-opt-defaults [mode v])}))}
+           {:on-change #(set-game-type! % session)}
            [:div.select
             [:select
              [:option "booster"]
              [:option "set singleton"]]]]]
-         (when (contains? (get-in @room [:game :opts]) :booster)
+         (when (contains? (get-in @session [:game :opts]) :booster)
            [:div.field.is-grouped
             (pack-controls session)])])
+
       [:div.field
        [:div.control
         [:button.button.is-link
-         {:on-click #(ws/send! [:room/create @room]
-                               5000
-                               (fn [data]
-                                 (js/console.log "replied:" (pr-str data))
-                                 (reset! room data)
-                                 (swap! session assoc :page :room)))}
-         "Create Room"]]]]]))
+         {:on-click #(create-game! session)}
+         "Create Game"]]]]]))
 
-(defn section-join-room
-  [session room]
+(defn- join-game!
+  [session]
+  (let [game-id (com/elem-val "game-id-input")
+        payload (-> (:game @session)
+                    (assoc :id game-id))]
+    (log/info "join game:" game-id)
+    (ws/send! [:game/join payload]
+              2000
+              (fn callback [data]
+                (if (:error data)
+                  (log/error [:game/join (:error data)])
+                  (do (swap! session assoc :game data)
+                      (com/nav! session :game)))))))
+
+(defn section-join-game
+  [session]
   [:div.section
    [:div.container
-    [:p.subtitle "Join A Room"]
+    [:p.subtitle "Join A Game"]
     [:div.field
      [:div.control
       [:input.input.is-primary
-       {:id "room-id-input"
+       {:id "game-id-input"
         :type "text"
-        :placeholder "Room ID"}]]]
+        :placeholder "Game ID"}]]]
     [:div.field
      [:div.control
       [:button.button.is-link
-       {:on-click
-        #(ws/send! [:room/join
-                    (assoc @room :id (com/elem-val "room-id-input"))]
-                   5000
-                   (fn [data]
-                     (if (:error data)
-                       (log/error [:room/join (:error data)])
-                       (do (reset! room data)
-                           (swap! session assoc :page :room)))))}
-       "Join Room"]]]]])
+       {:on-click #(join-game! session)}
+       "Join Game"]]]]])
 
 (defn page [session]
-  (r/with-let [room (r/cursor session [:room])]
-    [:div
-     (section-create-room session room)
-     (section-join-room session room)]))
+  [:div
+   (section-create-game session)
+   (section-join-game session)])
 
-
-(defmethod ws/handle-message :room/joined
+(defmethod ws/handle-message :game/joined
   [{:keys [message]}]
   (let [players (:players message)]
-    (js/console.log "set players:" (pr-str players))
+    (log/info "set players:" (pr-str players))
     (when-let [players (:players message)]
-      (swap! com/session assoc-in [:room :players] players))))
+      (swap! com/session assoc-in [:game :players] players))))

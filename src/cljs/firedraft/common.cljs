@@ -14,6 +14,9 @@
 (defn elem-val [id] (-> (.getElementById js/document id)
                         (value)))
 
+(defn nav!
+  [session page]
+  (swap! session assoc :page page))
 
 (def game-defaults
   {"winston" {:mode "winston"
@@ -24,12 +27,12 @@
 
 (def default-game-mode "winston")
 
-(def default-room-config
-  {:game (get game-defaults default-game-mode)})
+(def default-game-config
+  (get game-defaults default-game-mode))
 
 (defonce session
   (r/atom {:page :lobby
-           :room default-room-config}))
+           :game default-game-config}))
 
 (add-watch session :session
            (fn [_ _ _ new]

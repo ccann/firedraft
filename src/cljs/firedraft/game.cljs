@@ -1,18 +1,18 @@
-(ns firedraft.room
+(ns firedraft.game
   (:require [reagent.core :as r]))
 
 (defn page [session]
   (r/with-let [match (r/cursor session [:match])
-               room (r/cursor session [:room])]
+               game (r/cursor session [:game])]
     [:div.section
      [:div.container
       [:h1.title "Firedraft"]
-      [:p.subtitle "Room ID: "
+      [:p.subtitle "Game ID: "
        [:span.is-family-code.has-background-grey-lighter
-        (:id @room)]]
+        (:id @game)]]
       [:h2 "Players"]
       [:div.content
        [:ol {:type "1"}
-        (for [id (:players @room)]
+        (for [id (:players @game)]
           ^{:key id}
           [:li id])]]]]))
