@@ -7,7 +7,7 @@
    [clojure.tools.cli :refer [parse-opts]]
    [clojure.tools.logging :as log]
    [mount.core :as mount]
-   firedraft.events.core)
+   firedraft.events.game)
   (:gen-class))
 
 ;; log uncaught exceptions in threads

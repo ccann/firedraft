@@ -3,8 +3,8 @@
             [firedraft.common :as com]
             [firedraft.ws :as ws]
             [reagent.core :as r]
-            [taoensso.timbre :as log]
-            [ajax.core :as ajax]))
+            [ajax.core :as ajax]
+            [taoensso.timbre :as log]))
 
 (defn pack-controls
   [session]
@@ -40,6 +40,7 @@
             (fn callback [data]
               (log/info :game-created (pr-str data))
               (swap! session assoc :game data)
+              (swap! session assoc :player (first (:players data)))
               (com/nav! session :game))))
 
 (defn- set-game-mode!
@@ -96,6 +97,7 @@
                 (if (:error data)
                   (log/error [:game/join (:error data)])
                   (do (swap! session assoc :game data)
+                      (swap! session assoc :player (second (:players data)))
                       (com/nav! session :game)))))))
 
 (defn section-join-game
@@ -122,6 +124,7 @@
 
 (defmethod ws/handle-message :game/joined
   [{:keys [message]}]
+  (log/info :handle :game/joined)
   (let [players (:players message)]
     (log/info "set players:" (pr-str players))
     (when-let [players (:players message)]

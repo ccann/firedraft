@@ -1,5 +1,6 @@
 (ns firedraft.common
-  (:require [reagent.core :as r]))
+  (:require [reagent.core :as r]
+            [taoensso.timbre :as log]))
 
 (defn elem [id] (.getElementById js/document id))
 
@@ -36,4 +37,4 @@
 
 (add-watch session :session
            (fn [_ _ _ new]
-             (js/console.log "session updated:" (pr-str new))))
+             (log/info "session updated:" (pr-str new))))

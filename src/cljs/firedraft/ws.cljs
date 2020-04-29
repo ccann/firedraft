@@ -1,14 +1,8 @@
 (ns firedraft.ws
-  (:require-macros
-   [cljs.core.async.macros :refer (go go-loop)]
-   [re-frame.core :refer [dispatch reg-fx]]
-   [taoensso.timbre :as log])
-  (:require
-   [firedraft.common :as com]
-   [reagent.core :as r]
-   [cljs.core.async :refer (<! >! put! chan)]
-   [taoensso.encore :as encore :refer [have]]
-   [taoensso.sente :as sente :refer (cb-success?)]))
+  (:require [firedraft.common :as com]
+            [reagent.core :as r]
+            [taoensso.sente :as sente :refer [cb-success?]]
+            [taoensso.timbre :as log]))
 
 (let [{:keys [chsk ch-recv send-fn state]}
       ;; assigns a client ID to this browser tab
@@ -33,7 +27,7 @@
 
 (defmethod handle-event :chsk/recv
   [{[event message] :?data}]
-  (log/info :event event)
+  (log/info :event (pr-str event))
   (r/with-let [errors (r/cursor com/session [:errors])]
     (if-let [response-errors (:errors message)]
       (reset! errors response-errors)
@@ -44,11 +38,11 @@
 
 (defmethod handle-event :chsk/state
   [{:keys [?data]}]
-  (log/info :state-change ?data))
+  (log/info :state-change (pr-str ?data)))
 
 (defmethod handle-event :chsk/handshake
   [{:keys [?data]}]
-  (log/info :conn-established ?data))
+  (log/info :conn-established (pr-str ?data)))
 
 (defmethod handle-event :default [_] nil)
 
