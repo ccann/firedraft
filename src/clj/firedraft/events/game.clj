@@ -171,7 +171,7 @@
   [{:keys [?data]}]
   (let [{:keys [pile-ix game-id]} ?data
         game (get @*games game-id)
-        [player oppo] ((juxt whose-turn get-oppo) game)
+        player (whose-turn game)
         [top-deck & new-deck] (:deck game)]
     (swap! *games update game-id
            (fn [g] (-> g

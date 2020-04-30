@@ -38,3 +38,10 @@
 (add-watch session :session
            (fn [_ _ _ new]
              (log/info "session updated:" (pr-str new))))
+
+
+(def fire-emoji "🔥")
+
+(defn header []
+  [:div.content
+   [:h1.title  (str fire-emoji " Firedraft")]])

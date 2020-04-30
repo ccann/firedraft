@@ -34,7 +34,8 @@ body {
 }
 
 .card-back {
-    max-height: 250px;
+    max-height: 280px;
+    max-width: 200px;
 }
 
 .pickable {
@@ -44,6 +45,33 @@ body {
     border-radius: 10px;
 }
 
+.modal-card {
+    padding-left: 2em;
+    padding-right: 2em;
+    padding-top: 2em;
+}
+
+.modal-buttons{
+    padding-bottom: 2em;
+}
+
 .card {
+    max-height: 430px;
+    width: 300px;
+}
+.pick{
     max-height: 300px;
+}
+
+.picks {
+    position: relative;
+}
+.pick:hover {
+    max-height: 430px;
+    z-index: 1000;
+    width: 300px;
+}
+
+.prefetch-card{
+    visibility: hidden;
 }

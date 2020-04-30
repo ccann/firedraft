@@ -51,10 +51,12 @@
   [session]
   (let [winston? (= "winston" (get-in @session [:game :mode]))]
     [:div.section
-     [:h1.title "Firedraft"]
-     [:p.subtitle "Lobby"]
      [:div.container
-      [:p.subtitle "Create A Game"]
+      (com/header)
+      [:div.content
+       [:h2 "Lobby"]]
+      [:div.content
+       [:p.subtitle "Create A Game"]]
       [:div.field
        [:label.label "Mode"]
        [:div.control

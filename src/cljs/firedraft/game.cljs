@@ -2,7 +2,8 @@
   (:require [reagent.core :as r]
             [firedraft.ws :as ws]
             [firedraft.common :as com]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [ajax.core :as ajax]))
 
 (defn- start-game! [game]
   (ws/send! [:game/start (:id @game)]))
@@ -11,7 +12,7 @@
   [id]
   (str "https://api.scryfall.com/cards/"
        id
-       "?version=large&format=image"))
+       "?version=png&format=image"))
 
 (defn open-picker! []
   (.add (.-classList (com/elem "picker"))
@@ -28,7 +29,7 @@
      [:div.modal-background
       {:on-click close-picker!}]
      [:div.modal-content.has-background-white
-      [:div.level
+      [:div.level.modal-card
        [:div.level-item
         (when (:started? @game)
           (for [card (:cards @game)]
@@ -37,19 +38,18 @@
              [:img.card
               {:src (img-uri (:sid card))}]]))]]
 
-      [:footer.footer
-       [:div.level
-        ;; cannot pass on a pick from the deck
-        (when (= :pile type)
-          [:div.level-left
-           [:button.button.is-link
+      [:div.level
+       ;; cannot pass on a pick from the deck
+       [:div.level-item
+        [:div.field.is-grouped.buttons.are-medium.modal-buttons
+         (when (= :pile type)
+           [:button.button.is-danger
             {:on-click #(do (ws/send! [:game/pass {:game-id (:id @game)
                                                    :pile-ix ix}])
                             (close-picker!))}
-            "Pass"]])
+            "Pass"])
 
-        [:div.level-right
-         [:button.button.is-link
+         [:button.button.is-success
           {:on-click #(do
                         (log/info :send [:game/pick])
                         (ws/send! [:game/pick {:game-id (:id @game)
@@ -61,13 +61,17 @@
           "Pick"]]]]]]))
 
 (defn picks [game]
-  [:div.content
-   [:div.level
-    (log/info :picks (:picks @game))
-    (for [pick (:picks @game)]
-      ^{:key (:sid pick)}
+  [:div.tile.is-child
+   [:div.content
+    [:h2 "Picks"]]
+   [:div.picks
+    (for [[i pick] (map vector (range) (:picks @game))]
+      ^{:key i}
       [:figure
-       [:img.card-back {:src (img-uri (:sid pick))}]])]])
+       [:img.pick
+        {:style #js {:position "absolute"
+                     :top (* i 33)}
+         :src (img-uri (:sid pick))}]])]])
 
 (defn- my-turn?
   [game]
@@ -77,76 +81,84 @@
 (defn- pile [game index]
   (let [is-my-turn? (my-turn? @game)
         pickable? (= [:pile index] (:pickable @game))]
-    [:div.content
+    [:div.tile.is-child
      [:div.level
       [:div.level-item.has-centered-text
-       [:h4 (nth (:piles-count @game) index)]]]
-     [:figure
-      [:img.card-back {:id (str "pile-" (inc index))
-                       :class (when pickable? "pickable")
-                       :src "img/card-back-arena.png"
-                       :on-click #(when (and is-my-turn? pickable?)
-                                    (open-picker!))}]]]))
+       [:div.content
+        [:h4 (nth (:piles-count @game) index)]]]]
+     [:div.level
+      [:div.level-item
+       [:figure.image
+        [:img.card-back {:id (str "pile-" (inc index))
+                         :class (when pickable? "pickable")
+                         :src "img/card-back-arena.png"
+                         :on-click #(when (and is-my-turn? pickable?)
+                                      (open-picker!))}]]]]]))
 
 (defn- deck [game]
   (let [is-my-turn? (my-turn? @game)
         pickable? (= [:deck 0] (:pickable @game))]
-    [:div.content
+    [:div.tile.is-child
      [:div.level
       [:div.level-item.has-centered-text
-       [:h4 (str "Deck: " (:deck-count @game))]]]
-     [:figure
-      [:img.card-back {:id "deck"
-                       :src "img/card-back-arena.png"
-                       :class (when pickable? "pickable")
-                       :on-click #(when (and is-my-turn? pickable?)
-                                    (open-picker!))}]]]))
+       [:div.content
+        [:h4 (str "Deck: " (:deck-count @game))]]]]
+     [:div.level
+      [:div.level-item.has-centered-text
+       [:figure.image
+        [:img.card-back {:id "deck"
+                         :src "img/card-back-arena.png"
+                         :class (when pickable? "pickable")
+                         :on-click #(when (and is-my-turn? pickable?)
+                                      (open-picker!))}]]]]]))
 
 (defn page [session]
   (r/with-let [match (r/cursor session [:match])
                game (r/cursor session [:game])]
-    [:div.tile.is-ancestor
-     [:div.tile.is-vertical
-      [:div.tile
-
-       [:div.tile.is-6.is-parent
-        [:div.tile.is-child
-         [:div.section
-          [:div.container
-           [:h1.title "Firedraft"]
+    [:div.section
+     [:div.tile.is-ancestor
+      [:div.container.tile.is-vertical
+       [:div.tile
+        [:div.tile.is-8.is-parent
+         [:div.tile.is-child
+          (com/header)
+          [:div.content
            [:p.subtitle "Game ID: "
             [:span.is-family-code.has-background-grey-lighter
              (:id @game)]]
            [:h2 "Players"]
-           [:div.content
+           [:div
             [:ol {:type "1"}
              (for [id (:players @game)]
                ^{:key id}
-               [:li id])]]
-           (when (and (not (:started? @game))
-                      (= 2 (count (:players @game))))
-             [:button.button.is-link
-              {:on-click #(start-game! game)}
-              "Start Game"])]]]]
-       (when (:started? @game)
-         [:div.section.tile
-          [:div.container
-           [:div.content
-            [:div.level
-             [:div.level-item.has-centered-text
+               [:li id])]]]
+          (when (and (not (:started? @game))
+                     (= 2 (count (:players @game))))
+            [:button.button.is-link
+             {:on-click #(start-game! game)}
+             "Start Game"])]]
+        (when (:started? @game)
+          [:div.tile.is-4.is-child
+           [:div.level
+            [:div.level-item.has-centered-text
+             [:div.content
               [:h2 (if (my-turn? @game)
                      "Your Turn"
-                     "Oppo's Turn")]]]]]])]
-      (picker-modal game)
-      (when (:started? @game)
-        [:div
-         [:div.tile
-          (deck game)
-          (pile game 0)
-          (pile game 1)
-          (pile game 2)]
-         [:div.tile
-          (picks game)]])]]))
+                     "Oppo's Turn")]]]]])]
+
+       (picker-modal game)
+       (when (:started? @game)
+         [:div
+          [:div.tile.is-parent
+           (deck game)
+           (pile game 0)
+           (pile game 1)
+           (pile game 2)]
+          [:div.tile.is-parent
+           (picks game)]])]]
+     #_[:footer.footer
+      [:div.content.has-text-centered
+       [:p "author: @ccann"]]]]))
 
 (defmethod ws/handle-message :game/turn
   [{:keys [message]}]
@@ -156,5 +168,10 @@
 
 (defmethod ws/handle-message :game/cards
   [{:keys [message]}]
-  (log/info :handle :game/cards (mapv :name (:cards message)))
-  (swap! com/session assoc-in [:game :cards] (:cards message)))
+  (let [cards (:cards message)
+        card (first cards)
+        uri (img-uri (:sid card))]
+    (log/info :handle :game/cards (mapv :name cards))
+    (log/info :prefetch uri)
+    (swap! com/session assoc-in [:game :cards] cards)
+    (ajax/GET uri)))
