@@ -34,7 +34,7 @@
         (swap! *games assoc-in [id :players] players)
         (doseq [uid players]
           (ws/send! uid [:game/joined game]))
-        (?reply-fn game))
+        (?reply-fn (assoc game :player uid)))
       (do (log/error :game-404 id)
           (?reply-fn {:error :not-found})))))
 
@@ -48,7 +48,7 @@
                       :players [uid])]
       (swap! *games assoc id game)
       (log/info "create game:" game)
-      (?reply-fn game))))
+      (?reply-fn (assoc game :player uid)))))
 
 (defn- toggle-turn
   [game]
@@ -69,65 +69,121 @@
   [game]
   (get-in game [:players (:turn game)]))
 
-;; - add the pile cards to the player's picks
-;; - draw one from the deck to reset the pile
-;; - toggle turn
-;; - reply with updated player's picks and which pile is now pickable
-;; - send to all players `:game/step` to update facedown cards in UI
-;; - if it's the last pickable pile, send `:game/turn` to toggle the turn
+(defn add-picks
+  [game player-id picks]
+  (update-in game [:picks player-id]
+             #(if (nil? %) picks (into % picks))))
+
+(defn get-picks
+  [game player-id]
+  (get-in game [:picks player-id]))
+
+(defmulti pick!
+  "Update the game state with this pick:
+   * add the picked cards to the player's picks
+   * if the pick was from the deck, remove that card from the top
+   * if the pick was from a pile, take the top of deck and put it in that pile
+   * toggle the turn"
+  :pick-type)
+
+(defmethod pick! :deck
+  [{:keys [game-id]}]
+  (let [game (get @*games game-id)
+        player-id (whose-turn game)
+        [pick & new-deck] (:deck game)]
+    (swap! *games update game-id
+           (fn [g] (-> g
+                       (add-picks player-id [pick])
+                       (assoc :deck new-deck)
+                       (toggle-turn))))))
+
+(defmethod pick! :pile
+  [{:keys [pile-ix game-id]}]
+  (let [game (get @*games game-id)
+        player-id (whose-turn game)
+        picks (vec (get-in game [:piles pile-ix]))
+        [top-deck & new-deck] (:deck game)]
+    (swap! *games update game-id
+           (fn [g] (-> g
+                       (add-picks player-id picks)
+                       ;; reset the picked pile to the top card from the deck
+                       (assoc-in [:piles pile-ix] [top-deck])
+                       (assoc :deck new-deck)
+                       (toggle-turn))))))
+
+(defn find-next-pickable-stack
+  ([game]
+   (find-next-pickable-stack game nil))
+  ([game min]
+   (let [min (or min -1)]
+     (or (some->> (find-first (fn [[i cs]]
+                                (when (and (seq cs) (< min i))
+                                  i))
+                              (map vector (range) (:piles game)))
+                  (first)
+                  (vector :pile))
+         (and (seq (:deck game))
+              [:deck 0])))))
+
+(defn get-oppo
+  [game]
+  (find-first #(not= (whose-turn game) %) (:players game)))
+
+(defn- inc-client-game-state!
+  [game upcoming-player & [pile-ix]]
+  ;; TODO: if `pickable` is nil, the game is over
+  (let [pickable (find-next-pickable-stack game pile-ix)]
+    (log/info :pickable pickable)
+    (doseq [uid (:players game)]
+      ;; TODO: rename :game/turn
+      (log/info :send uid :game/turn)
+      (ws/send! uid [:game/turn
+                     {:piles-count (mapv count (:piles game))
+                      :deck-count (count (:deck game))
+                      :turn (:turn game)
+                      :pickable pickable}]))
+    ;; send the card data for the card that is about to be revealed by oppo
+    ;; if they're choosing from the deck, send the top card
+    ;; if they're choosing from the pile, send those cards in pile
+    (log/info :send upcoming-player :game/cards)
+    (ws/send! upcoming-player
+              [:game/cards
+               (case (first pickable)
+                 :deck {:cards [(first (:deck game))]}
+                 :pile {:cards (get-in game [:piles (second pickable)])})])))
+
 (defn- pick-cards
   [{:keys [?data ?reply-fn]}]
   (let [{:keys [picked game-id]} ?data
         [pick-type pile-ix] picked
         game (get @*games game-id)
-        player-id (whose-turn game)
-        picks (case pick-type
-                :deck [(:top-deck game)]
-                :pile (vec (get-in game [:piles pile-ix])))
-        [card & deck] (:deck game)
-        pickable (or (some->> (find-first (fn [[i cs]]
-                                            (when (seq cs) i))
-                                          (map vector (range) (:piles game)))
-                              (first)
-                              (vector :pile))
-                     [:deck 0])]
-    (def cody pickable)
-    (swap! *games update game-id
-           (fn [g] (-> g
-                       ;; add the picks the player made
-                       (update-in [:picks player-id]
-                                  #(if (nil? %) picks (into % picks)))
-                       ;; reset the deck with 1 fewer cards
-                       (assoc :deck deck)
-                       ;; add the drawn card to the pile
-                       (assoc-in [:piles pile-ix] [card])
-                       (toggle-turn))))
-    (?reply-fn {:picks picks})
+        [player oppo] ((juxt whose-turn get-oppo) game)]
+    ;; update the game state with this pick
+    (pick! {:pick-type pick-type
+            :pile-ix pile-ix
+            :game-id game-id})
     (let [game (get @*games game-id)
-          oppo (find-first #(not= player-id %) (:players game))]
-      (doseq [uid (:players game)]
-        (log/info :send uid :game/turn)
-        (ws/send! uid [:game/turn
-                       {:piles-count (mapv count (:piles game))
-                        :deck-count (count (:deck game))
-                        :turn (:turn game)
-                        :pickable pickable}]))
-      ;; send the card data for the card that is about to be revealed by oppo
-      ;; if they're choosing from the deck, send the top card
-      ;; if they're choosing from the pile, send those cards in pile
-      (let [card (first (:deck game))]
-        (ws/send! oppo
-                  [:game/cards
-                   (case (first pickable)
-                     :deck {:cards [card]}
-                     :pile {:cards (get-in game [:piles (second pickable)])})])))))
+          picks (get-picks game player)]
+      (?reply-fn {:picks picks})
+      (inc-client-game-state! game oppo))))
 
 (defn- pass-cards
-  [{:keys [?data ?reply-fn]}]
-  nil)
+  [{:keys [?data]}]
+  (let [{:keys [pile-ix game-id]} ?data
+        game (get @*games game-id)
+        [player oppo] ((juxt whose-turn get-oppo) game)
+        [top-deck & new-deck] (:deck game)]
+    (swap! *games update game-id
+           (fn [g] (-> g
+                       ;; add the top of the deck to the passed pile
+                       (update-in [:piles pile-ix] conj top-deck)
+                       ;; reset the deck
+                       (assoc :deck new-deck))))
+    (let [game (get @*games game-id)]
+      (inc-client-game-state! game player pile-ix))))
 
 (defn start-game
-  [{:keys [event ?data ?reply-fn]}]
+  [{:keys [event ?data]}]
   (log/info event)
   (let [id ?data]
     (if-let [game (get @*games id)]
@@ -136,15 +192,7 @@
                      (add-piles)
                      (toggle-turn))]
         (swap! *games assoc id game)
-        (ws/send! (whose-turn game)
-                  [:game/cards {:cards (get-in game [:piles 0])}])
-        (doseq [uid (:players game)]
-          (log/info :send uid :game/turn)
-          (ws/send! uid [:game/turn
-                         {:piles-count [1 1 1]
-                          :deck-count (count (:deck game))
-                          :turn (:turn game)
-                          :pickable [:pile 0]}])))
+        (inc-client-game-state! game (whose-turn game)))
       (log/error :game-404 id))))
 
 (defstate event-handlers

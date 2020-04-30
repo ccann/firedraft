@@ -40,7 +40,6 @@
             (fn callback [data]
               (log/info :game-created (pr-str data))
               (swap! session assoc :game data)
-              (swap! session assoc :player (first (:players data)))
               (com/nav! session :game))))
 
 (defn- set-game-mode!
@@ -97,7 +96,6 @@
                 (if (:error data)
                   (log/error [:game/join (:error data)])
                   (do (swap! session assoc :game data)
-                      (swap! session assoc :player (second (:players data)))
                       (com/nav! session :game)))))))
 
 (defn section-join-game
