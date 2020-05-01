@@ -3,19 +3,10 @@
             [camel-snake-kebab.extras :as casex]
             [clj-http.client :as client]
             [clojure.string :as str]
+            [firedraft.game.util :as g]
+            [firedraft.packs :as packs]
             [jsonista.core :as json]
-            [medley.core :refer [find-first]]
-            [clojure.java.io :as io]
-            [clojure.set :as set]))
-
-(def supported-sets
-  #{"IKO"
-    "WAR"
-    "M20"
-    "THB"})
-
-(def supported-set-types
-  #{"expansion" "core"})
+            [medley.core :refer [find-first]]))
 
 (def json-mapper
   (json/object-mapper
@@ -52,8 +43,8 @@
                          (json-decode)
                          (get :data))
                 sets (->> sets
-                          (filter #(supported-set-types (get % :set_type)))
-                          (filter #(supported-sets (str/upper-case (get % :code))))
+                          (filter #(g/supported-set-types (get % :set_type)))
+                          (filter #(g/supported-sets (str/upper-case (get % :code))))
                           (map format-set))]
             (reset! *sets-cache sets))
           (throw (ex-info "failed to fetch sets from Scryfall"
@@ -70,6 +61,9 @@
                     :scryfall-id
                     :image-uri
                     :type
+                    :is-alternative
+                    :is-promo
+                    :colors
                     :rarity
                     :uuid])
       (assoc :set set-code)))
@@ -83,7 +77,8 @@
             (let [cards (->> (:body resp)
                              (json-decode)
                              (:cards)
-                             (map #(format-card % set-code)))]
+                             (map #(format-card % set-code))
+                             (remove :is-promo))]
               (swap! *cards-by-set-cache assoc set-code cards)
               cards)
             (throw (ex-info "failed to fetch set cards from MTGJson"
@@ -130,18 +125,25 @@
   (let [boosters (get-in game [:opts :booster])]
     (cond boosters
           (assoc game :deck
-                 (map (fn [m] {:sid (:scryfall-id m)
-                               :name (:name m)})
+                 (->> boosters
                       (mapcat (fn [set-code]
                                 (let [cards (get-cards-by-set set-code)]
-                                  ;; TODO: pack construction
-                                  (take 15 (shuffle
-                                            (filter
-                                             #(not (str/includes? (:type %) "Basic Land"))
-                                             cards)))))
-                              boosters)))
+                                  (packs/create-booster
+                                   {:cards cards
+                                    :set-code set-code}))))
+                      (mapv (fn [m] {:sid (:scryfall-id m)
+                                     :name (:name m)}))))
 
           :else nil)))
 
 (defn shuffle-deck [game]
   (update game :deck shuffle))
+
+#_(map (juxt :name :rarity :colors :foil?)
+     (packs/create-booster
+      {:cards (get-cards-by-set "IKO")
+       :set-code "IKO"}))
+
+
+;; (count (filter #(= "common" (:rarity %))
+;;                (get-cards-by-set "IKO")))

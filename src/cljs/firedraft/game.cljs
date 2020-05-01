@@ -1,8 +1,8 @@
 (ns firedraft.game
   (:require [reagent.core :as r]
             [firedraft.ws :as ws]
-            [firedraft.common :as com]
-            [firedraft.game.util :refer [whose-turn]]
+            [firedraft.common.state :as state]
+            [firedraft.common.dom :as dom]
             [taoensso.timbre :as log]
             [ajax.core :as ajax]))
 
@@ -16,11 +16,11 @@
        "?version=png&format=image"))
 
 (defn open-picker! []
-  (.add (.-classList (com/elem "picker"))
+  (.add (.-classList (dom/elem "picker"))
         "is-active"))
 
 (defn close-picker! []
-  (.remove (.-classList (com/elem "picker"))
+  (.remove (.-classList (dom/elem "picker"))
            "is-active"))
 
 (defn picker-modal
@@ -120,7 +120,7 @@
        [:div.tile
         [:div.tile.is-8.is-parent
          [:div.tile.is-child
-          (com/header)
+          (dom/header)
           [:div.content
            [:p.subtitle "Game ID: "
             [:span.is-family-code.has-background-grey-lighter
@@ -164,7 +164,7 @@
 (defmethod ws/handle-message :game/step
   [{:keys [message]}]
   (log/info :handle :game/step)
-  (swap! com/session update :game #(merge % (assoc message :started? true))))
+  (swap! state/session update :game #(merge % (assoc message :started? true))))
 
 (defmethod ws/handle-message :game/cards
   [{:keys [message]}]
@@ -173,5 +173,5 @@
         uri (img-uri (:sid card))]
     (log/info :handle :game/cards (mapv :name cards))
     (log/info :prefetch uri)
-    (swap! com/session assoc-in [:game :cards] cards)
+    (swap! state/session assoc-in [:game :cards] cards)
     (ajax/GET uri)))

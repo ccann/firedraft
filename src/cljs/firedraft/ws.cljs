@@ -1,5 +1,5 @@
 (ns firedraft.ws
-  (:require [firedraft.common :as com]
+  (:require [firedraft.common.state :refer [session]]
             [reagent.core :as r]
             [taoensso.sente :as sente :refer [cb-success?]]
             [taoensso.timbre :as log]))
@@ -28,7 +28,7 @@
 (defmethod handle-event :chsk/recv
   [{[event message] :?data}]
   (log/info :event (pr-str event))
-  (r/with-let [errors (r/cursor com/session [:errors])]
+  (r/with-let [errors (r/cursor session [:errors])]
     (if-let [response-errors (:errors message)]
       (reset! errors response-errors)
       (do

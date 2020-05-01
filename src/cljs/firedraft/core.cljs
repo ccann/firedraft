@@ -8,7 +8,7 @@
             [goog.history.EventType :as HistoryEventType]
             [reagent.dom :as dom]
             [reitit.core :as reitit]
-            [firedraft.common :as com])
+            [firedraft.common.state :refer [session]])
   (:import goog.History))
 
 (def pages
@@ -16,7 +16,7 @@
    :game game/page})
 
 (defn page []
-  ((pages (:page @com/session)) com/session))
+  ((pages (:page @session)) session))
 
 
 ;; -------------------------
@@ -40,7 +40,7 @@
     (events/listen
       HistoryEventType/NAVIGATE
       (fn [event]
-        (swap! com/session assoc :page (match-route (.-token event)))))
+        (swap! session assoc :page (match-route (.-token event)))))
     (.setEnabled true)))
 
 (defn mount-components []

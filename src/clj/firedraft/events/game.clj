@@ -15,9 +15,6 @@
 ;;         :cube "abcdefg"}
 ;;  :players ["uid1" "uid2"]}
 
-(def game-modes
-  #{"winston"})
-
 (defstate *games
   :start (atom {}))
 
@@ -129,25 +126,27 @@
 
 (defn- inc-client-game-state!
   [game upcoming-player & [pile-ix]]
-  ;; TODO: if `pickable` is nil, the game is over
-  (let [pickable (find-next-pickable-stack game pile-ix)]
-    (log/info :pickable pickable)
-    (doseq [uid (:players game)]
-      (log/info :send uid :game/step)
-      (ws/send! uid [:game/step
-                     {:piles-count (mapv count (:piles game))
-                      :deck-count (count (:deck game))
-                      :turn (:turn game)
-                      :pickable pickable}]))
-    ;; send the card data for the card that is about to be revealed by oppo
-    ;; if they're choosing from the deck, send the top card
-    ;; if they're choosing from the pile, send those cards in pile
-    (log/info :send upcoming-player :game/cards)
-    (ws/send! upcoming-player
-              [:game/cards
-               (case (first pickable)
-                 :deck {:cards [(first (:deck game))]}
-                 :pile {:cards (get-in game [:piles (second pickable)])})])))
+  (if-let [pickable (find-next-pickable-stack game pile-ix)]
+    (do
+      (log/info :pickable pickable)
+      (doseq [uid (:players game)]
+        (log/info :send uid :game/step)
+        (ws/send! uid [:game/step
+                       {:piles-count (mapv count (:piles game))
+                        :deck-count (count (:deck game))
+                        :turn (:turn game)
+                        :pickable pickable}]))
+      ;; send the card data for the card that is about to be revealed by oppo
+      ;; if they're choosing from the deck, send the top card
+      ;; if they're choosing from the pile, send those cards in pile
+      (log/info :send upcoming-player :game/cards)
+      (ws/send! upcoming-player
+                [:game/cards
+                 (case (first pickable)
+                   :deck {:cards [(first (:deck game))]}
+                   :pile {:cards (get-in game [:piles (second pickable)])})]))
+    ;; TODO: if `pickable` is nil, the game is over
+    nil))
 
 (defn- pick-cards
   [{:keys [?data ?reply-fn]}]

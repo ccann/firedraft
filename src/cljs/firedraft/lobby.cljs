@@ -1,9 +1,9 @@
 (ns firedraft.lobby
   (:require [clojure.string :as str]
-            [firedraft.common :as com]
+            [firedraft.common.dom :as dom]
+            [firedraft.common.page :as page]
+            [firedraft.common.state :as state]
             [firedraft.ws :as ws]
-            [reagent.core :as r]
-            [ajax.core :as ajax]
             [taoensso.timbre :as log]))
 
 (defn pack-controls
@@ -30,7 +30,7 @@
   [this session]
   (swap! session assoc-in [:game :opts]
          (let [mode (get-in @session [:game :mode])
-               v (-> this com/target-value ->keyword)]
+               v (-> this dom/target-value ->keyword)]
            {v (get-in game-opt-defaults [mode v])})))
 
 (defn- create-game!
@@ -40,19 +40,19 @@
             (fn callback [data]
               (log/info :game-created (pr-str data))
               (swap! session assoc :game data)
-              (com/nav! session :game))))
+              (page/nav! session :game))))
 
 (defn- set-game-mode!
   [this session]
   (swap! session assoc-in [:game :mode]
-         (com/target-value this)))
+         (dom/target-value this)))
 
 (defn section-create-game
   [session]
   (let [winston? (= "winston" (get-in @session [:game :mode]))]
     [:div.section
      [:div.container
-      (com/header)
+      (dom/header)
       [:div.content
        [:h2 "Lobby"]]
       [:div.content
@@ -88,7 +88,7 @@
 
 (defn- join-game!
   [session]
-  (let [game-id (com/elem-val "game-id-input")
+  (let [game-id (dom/elem-val "game-id-input")
         payload (-> (:game @session)
                     (assoc :id game-id))]
     (log/info "join game:" game-id)
@@ -98,7 +98,7 @@
                 (if (:error data)
                   (log/error [:game/join (:error data)])
                   (do (swap! session assoc :game data)
-                      (com/nav! session :game)))))))
+                      (page/nav! session :game)))))))
 
 (defn section-join-game
   [session]
@@ -128,4 +128,4 @@
   (let [players (:players message)]
     (log/info "set players:" (pr-str players))
     (when-let [players (:players message)]
-      (swap! com/session assoc-in [:game :players] players))))
+      (swap! state/session assoc-in [:game :players] players))))
