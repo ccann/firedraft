@@ -13,7 +13,7 @@
   [id]
   (str "https://api.scryfall.com/cards/"
        id
-       "?version=png&format=image"))
+       "?version=large&format=image"))
 
 (defn open-picker! []
   (.add (.-classList (dom/elem "picker"))
@@ -30,13 +30,13 @@
      [:div.modal-background
       {:on-click close-picker!}]
      [:div.modal-content.has-background-white
-      [:div.level.modal-card
+      [:div.level.modal-card-container
        [:div.level-item
         (when (:started? @game)
           (for [card (:cards @game)]
             ^{:key (:sid card)}
             [:figure
-             [:img.card
+             [:img.card.modal-card
               {:src (img-uri (:sid card))}]]))]]
 
       [:div.level
@@ -69,7 +69,7 @@
     (for [[i pick] (map vector (range) (:picks @game))]
       ^{:key i}
       [:figure
-       [:img.pick
+       [:img.card.pick
         {:style #js {:position "absolute"
                      :top (* i 33)}
          :src (img-uri (:sid pick))}]])]])

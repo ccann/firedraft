@@ -36,29 +36,36 @@ body {
 .card-back {
     max-height: 280px;
     max-width: 200px;
+    border-radius: 13px;
 }
 
 .pickable {
     -webkit-box-shadow: 0px 0px 10px 10px rgba(102,255,167,0.75);
     -moz-box-shadow: 0px 0px 10px 10px rgba(102,255,167,0.75);
     box-shadow: 0px 0px 10px 10px rgba(102,255,167,0.75);
-    border-radius: 10px;
+    cursor: pointer;
 }
 
-.modal-card {
+.card {
+    border-radius: 13px;
+}
+
+.modal-card-container {
     padding-left: 2em;
     padding-right: 2em;
     padding-top: 2em;
+}
+
+.modal-card {
+    max-height: 430px;
+    width: 300px;
+    border-radius: 13px;
 }
 
 .modal-buttons{
     padding-bottom: 2em;
 }
 
-.card {
-    max-height: 430px;
-    width: 300px;
-}
 .pick{
     max-height: 300px;
 }
