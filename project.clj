@@ -40,7 +40,7 @@
                  [org.clojure/spec.alpha "0.2.187"]
                  ;; [buddy/buddy-core "1.6.0"]
                  [crypto-random "1.2.0"]
-                 [com.taoensso/encore "2.119.0"]]
+                 [lambdaisland/deep-diff2 "2.0.0-93"]]
 
   :min-lein-version "2.0.0"
 

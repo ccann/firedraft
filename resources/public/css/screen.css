@@ -71,7 +71,3 @@ body {
     z-index: 1000;
     width: 300px;
 }
-
-.prefetch-card{
-    visibility: hidden;
-}

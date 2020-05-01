@@ -3,6 +3,7 @@
             [crypto.random :as random]
             [firedraft.cards :as cards]
             [firedraft.routes.ws :as ws]
+            [firedraft.game.util :refer [whose-turn]]
             [medley.core :refer [find-first]]
             [mount.core :refer [defstate]]))
 
@@ -65,9 +66,6 @@
            :piles [[c1] [c2] [c3]]
            :deck (vec deck))))
 
-(defn- whose-turn
-  [game]
-  (get-in game [:players (:turn game)]))
 
 (defn add-picks
   [game player-id picks]
@@ -135,9 +133,8 @@
   (let [pickable (find-next-pickable-stack game pile-ix)]
     (log/info :pickable pickable)
     (doseq [uid (:players game)]
-      ;; TODO: rename :game/turn
-      (log/info :send uid :game/turn)
-      (ws/send! uid [:game/turn
+      (log/info :send uid :game/step)
+      (ws/send! uid [:game/step
                      {:piles-count (mapv count (:piles game))
                       :deck-count (count (:deck game))
                       :turn (:turn game)

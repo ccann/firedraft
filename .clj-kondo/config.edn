@@ -1,4 +1,5 @@
-{:lint-as {mount.core/defstate clojure.core/def}
+{:lint-as {mount.core/defstate clojure.core/def
+           reagent.core/with-let clojure.core/let}
  :linters
  {:unused-binding {:level :error}
   :unused-referred-var {:exclude {}

@@ -2,6 +2,7 @@
   (:require [reagent.core :as r]
             [firedraft.ws :as ws]
             [firedraft.common :as com]
+            [firedraft.game.util :refer [whose-turn]]
             [taoensso.timbre :as log]
             [ajax.core :as ajax]))
 
@@ -77,7 +78,6 @@
   [game]
   (= (:player game) (get-in game [:players (:turn game)])))
 
-
 (defn- pile [game index]
   (let [is-my-turn? (my-turn? @game)
         pickable? (= [:pile index] (:pickable @game))]
@@ -113,8 +113,7 @@
                                       (open-picker!))}]]]]]))
 
 (defn page [session]
-  (r/with-let [match (r/cursor session [:match])
-               game (r/cursor session [:game])]
+  (r/with-let [game (r/cursor session [:game])]
     [:div.section
      [:div.tile.is-ancestor
       [:div.container.tile.is-vertical
@@ -160,10 +159,11 @@
       [:div.content.has-text-centered
        [:p "author: @ccann"]]]]))
 
-(defmethod ws/handle-message :game/turn
+;; handle stepping through the game state
+;; whose turn it is may or may not change
+(defmethod ws/handle-message :game/step
   [{:keys [message]}]
-  (log/info :handle :game/turn)
-  (log/info (pr-str message))
+  (log/info :handle :game/step)
   (swap! com/session update :game #(merge % (assoc message :started? true))))
 
 (defmethod ws/handle-message :game/cards
