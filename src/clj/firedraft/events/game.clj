@@ -115,7 +115,7 @@
            (fn [g] (-> g
                        (add-picks player-id picks)
                        ;; reset the picked pile to the top card from the deck
-                       (assoc-in [:piles pile-ix] [top-deck])
+                       (assoc-in [:piles pile-ix] (if top-deck [top-deck] []))
                        (assoc :deck new-deck)
                        (toggle-turn))))))
 
@@ -189,11 +189,11 @@
         player (whose-turn game)
         [top-deck & new-deck] (:deck game)]
     (swap! *games update game-id
-           (fn [g] (-> g
-                       ;; add the top of the deck to the passed pile
-                       (update-in [:piles pile-ix] conj top-deck)
-                       ;; reset the deck
-                       (assoc :deck new-deck))))
+           (fn [g] (cond-> g
+                     ;; add the top of the deck to the passed pile
+                     top-deck (update-in [:piles pile-ix] conj top-deck)
+                     ;; reset the deck
+                     true (assoc :deck new-deck))))
     (let [game (get @*games game-id)]
       (inc-client-game-state! game player pile-ix))))
 

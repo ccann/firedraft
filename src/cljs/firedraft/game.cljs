@@ -44,7 +44,10 @@
        ;; cannot pass on a pick from the deck
        [:div.level-item
         [:div.field.is-grouped.buttons.are-medium.modal-buttons
-         (when (= :pile type)
+         (when (and (= :pile type)
+                    (if (= ix 2)
+                      (< 0 (:deck-count @game))
+                      (< 0 (get-in @game [:piles-count (inc ix)]))))
            [:button.button.is-danger
             {:on-click #(do (ws/send! [:game/pass {:game-id (:id @game)
                                                    :pile-ix ix}])
