@@ -4,7 +4,8 @@
             [firedraft.common.state :as state]
             [firedraft.common.dom :as dom]
             [taoensso.timbre :as log]
-            [ajax.core :as ajax]))
+            [ajax.core :as ajax]
+            [clojure.string :as str]))
 
 (defn- start-game! [game]
   (ws/send! [:game/start (:id @game)]))
@@ -155,9 +156,14 @@
            (pile game 2)]
           [:div.tile.is-parent
            (picks game)]])]]
+     (when (:over? @game)
+       [:div.content
+        [:p
+         (for [line (str/split-lines (:pick-list @game))]
+           [:span line [:br]])]])
      #_[:footer.footer
-      [:div.content.has-text-centered
-       [:p "author: @ccann"]]]]))
+        [:div.content.has-text-centered
+         [:p "author: @ccann"]]]]))
 
 ;; handle stepping through the game state
 ;; whose turn it is may or may not change
@@ -168,10 +174,14 @@
 
 (defmethod ws/handle-message :game/cards
   [{:keys [message]}]
-  (let [cards (:cards message)
-        card (first cards)
-        uri (img-uri (:sid card))]
+  (let [cards (:cards message)]
     (log/info :handle :game/cards (mapv :name cards))
-    (log/info :prefetch uri)
-    ;; (ajax/GET uri)
-    (swap! state/session assoc-in [:game :cards] cards)))
+    (when (seq cards)
+      (swap! state/session assoc-in [:game :cards] cards))))
+
+(defmethod ws/handle-message :game/end
+  [{:keys [message]}]
+  (log/info :handle :game/end)
+  (swap! state/session assoc-in [:game :pick-list] message)
+  (swap! state/session assoc-in [:game :started?] false)
+  (swap! state/session assoc-in [:game :over?] true))

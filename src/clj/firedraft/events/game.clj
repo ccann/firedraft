@@ -125,7 +125,8 @@
   ([game min]
    (let [min (or min -1)]
      (or (some->> (find-first (fn [[i cs]]
-                                (when (and (seq cs) (< min i))
+                                (when (and (seq (remove nil? cs))
+                                           (< min i))
                                   i))
                               (map vector (range) (:piles game)))
                   (first)
@@ -145,7 +146,9 @@
       (doseq [uid (:players game)]
         (log/info :send uid :game/step)
         (ws/send! uid [:game/step
-                       {:piles-count (mapv count (:piles game))
+                       {:piles-count (->> (:piles game)
+                                          (remove nil?)
+                                          (mapv count))
                         :deck-count (count (:deck game))
                         :turn (:turn game)
                         :pickable pickable}]))
@@ -159,7 +162,10 @@
                    :deck {:cards [(first (:deck game))]}
                    :pile {:cards (get-in game [:piles (second pickable)])})]))
     ;; TODO: if `pickable` is nil, the game is over
-    nil))
+    (doseq [uid (:players game)]
+        (log/info :send uid :game/end)
+        (ws/send! uid [:game/end (export-picks {:game-id (:id game)
+                                                :player-id uid})]))))
 
 (defn- pick-cards
   [{:keys [?data ?reply-fn]}]

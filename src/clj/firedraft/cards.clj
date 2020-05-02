@@ -135,8 +135,3 @@
 
 (defn shuffle-deck [game]
   (update game :deck shuffle))
-
-
-
-;; (count (filter #(= "common" (:rarity %))
-;;                (get-cards-by-set "IKO")))
