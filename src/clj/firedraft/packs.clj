@@ -49,9 +49,9 @@
   [set-cards & [exclude]]
   (let [[bs cs us rs ms] (map #(pool % set-cards exclude)
                               ["basic" "common" "uncommon" "rare" "mythic"])
-        basic-pack (cond-> {:cs (take 10 cs)
+        basic-pack (cond-> {:rs (take 1 rs)
                             :us (take 3 us)
-                            :rs (take 1 rs)
+                            :cs (take 10 cs)
                             :bs (take 1 bs)}
                      ;; 1 in 8 packs contains a mythic
                      (< (rand) 1/8) (add-mythic ms)
