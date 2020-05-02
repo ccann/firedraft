@@ -95,11 +95,13 @@
                                  [prone "2020-01-17"]
                                  [re-frisk "0.5.5"]
                                  [ring/ring-devel "1.8.0"]
-                                 [ring/ring-mock "0.4.0"]]
+                                 [ring/ring-mock "0.4.0"]
+                                 [com.bhauman/rebel-readline "0.1.4"]]
                   :plugins      [[com.jakemccrary/lein-test-refresh "0.24.1"]
                                  [jonase/eastwood "0.3.5"]
                                  [lein-doo "0.1.11"]
                                  [lein-figwheel "0.5.19"]]
+                  :aliases {"rebl" ["trampoline" "run" "-m" "rebel-readline.main"]}
                   :cljsbuild{:builds
                    {:app
                     {:source-paths ["src/cljs" "src/cljc" "env/dev/cljs"]
