@@ -10,6 +10,7 @@
     (if (set? -name)
       (-name (:name card))
       (= -name (:name card)))))
+
 (def basic-lands
   #{"Forest" "Island" "Mountain" "Swamp" "Plains"})
 
@@ -81,7 +82,7 @@
         {:keys [pack]} (-create-booster cards {:common gainland-names})
         gainlands (filter (has-name (set gainland-names)) cards)
         pack-cards (cond-> pack
-                     ;; 1 in 2 packs contain a gainland
-                     (< (rand) 1/2) (assoc :bs [(rand-nth gainlands)])
+                     ;; 5 in 12 packs contain a gainland
+                     (< (rand) 5/12) (assoc :bs [(rand-nth gainlands)])
                      true (assemble))]
     pack-cards))
