@@ -173,5 +173,5 @@
         uri (img-uri (:sid card))]
     (log/info :handle :game/cards (mapv :name cards))
     (log/info :prefetch uri)
-    (swap! state/session assoc-in [:game :cards] cards)
-    (ajax/GET uri)))
+    ;; (ajax/GET uri)
+    (swap! state/session assoc-in [:game :cards] cards)))
