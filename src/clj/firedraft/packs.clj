@@ -67,19 +67,31 @@
 
 (defmulti create-booster :set-code)
 
+(def gainland-names
+  #{"Tranquil Cove"
+    "Dismal Backwater"
+    "Bloodfell Caves"
+    "Rugged Highlands"
+    "Blossoming Sands"
+    "Scoured Barrens"
+    "Swiftwater Cliffs"
+    "Jungle Hollow"
+    "Wind-Scarred Crag"
+    "Thornwood Falls"})
+
 (defmethod create-booster "IKO"
   [{:keys [cards]}]
-  (let [gainland-names #{"Tranquil Cove"
-                         "Dismal Backwater"
-                         "Bloodfell Caves"
-                         "Rugged Highlands"
-                         "Blossoming Sands"
-                         "Scoured Barrens"
-                         "Swiftwater Cliffs"
-                         "Jungle Hollow"
-                         "Wind-Scarred Crag"
-                         "Thornwood Falls"}
-        {:keys [pack]} (-create-booster cards {:common gainland-names})
+  (let [{:keys [pack]} (-create-booster cards {:common gainland-names})
+        gainlands (filter (has-name (set gainland-names)) cards)
+        pack-cards (cond-> pack
+                     ;; 5 in 12 packs contain a gainland
+                     (< (rand) 5/12) (assoc :bs [(rand-nth gainlands)])
+                     true (assemble))]
+    pack-cards))
+
+(defmethod create-booster "M20"
+  [{:keys [cards]}]
+  (let [{:keys [pack]} (-create-booster cards {:common gainland-names})
         gainlands (filter (has-name (set gainland-names)) cards)
         pack-cards (cond-> pack
                      ;; 5 in 12 packs contain a gainland

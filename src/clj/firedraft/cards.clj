@@ -43,8 +43,10 @@
                          (json-decode)
                          (get :data))
                 sets (->> sets
-                          (filter #(g/supported-set-types (get % :set_type)))
-                          (filter #(g/supported-sets (str/upper-case (get % :code))))
+                          (filter #((set g/supported-set-types)
+                                    (get % :set_type)))
+                          (filter #((set g/supported-sets)
+                                    (str/upper-case (get % :code))))
                           (map format-set))]
             (reset! *sets-cache sets))
           (throw (ex-info "failed to fetch sets from Scryfall"
@@ -60,10 +62,15 @@
                     :scryfall-id
                     :type
                     :number
-                    :is-promo
                     :colors
                     :rarity])
       (assoc :set set-code)))
+
+(defn- ->Int
+  [s]
+  ;; some numbers are not parsable e.g. "206†" for the misprint of Corpse Knight
+  (try (Integer/parseInt (:number s))
+       (catch NumberFormatException _ 10000)))
 
 (defn get-cards-by-set
   [set-code]
@@ -75,7 +82,7 @@
                              (json-decode)
                              (:cards)
                              (map #(format-card % set-code))
-                             (remove :is-promo))]
+                             (filter #(<= (->Int %) (get g/set-numbers set-code))))]
               (swap! *cards-by-set-cache assoc set-code cards)
               cards)
             (throw (ex-info "failed to fetch set cards from MTGJson"

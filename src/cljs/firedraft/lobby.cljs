@@ -4,7 +4,8 @@
             [firedraft.common.page :as page]
             [firedraft.common.state :as state]
             [firedraft.ws :as ws]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [firedraft.game.util :as g]))
 
 (defn pack-controls
   [session]
@@ -13,14 +14,18 @@
     [:div.control
      [:div.select
       [:select
-       [:option "IKO"]]]]))
-
+       {:on-change #(swap! session assoc-in
+                           [:game :opts :booster n]
+                           (dom/target-value %))}
+       (for [set-code g/supported-sets]
+         ^{:key set-code}
+         [:option set-code])]]]))
 
 (def game-opt-defaults
-  {"winston" {:booster ["IKO" "IKO" "IKO"
-                        "IKO" "IKO" "IKO"]
-              :set-singleton nil}
-   "grid" {}})
+  (let [sc (first g/supported-sets)]
+    {"winston" {:booster [sc sc sc sc sc sc]
+                :set-singleton nil}
+     "grid" {}}))
 
 (defn- ->keyword
   [s]
@@ -63,8 +68,7 @@
         {:on-change #(set-game-mode! % session)}
         [:div.select
          [:select
-          [:option "winston"]
-          [:option "grid"]]]]]
+          [:option "winston"]]]]]
 
       (when winston?
         [:div.field
@@ -74,8 +78,7 @@
            {:on-change #(set-game-type! % session)}
            [:div.select
             [:select
-             [:option "booster"]
-             [:option "set singleton"]]]]]
+             [:option "booster"]]]]]
          (when (contains? (get-in @session [:game :opts]) :booster)
            [:div.field.is-grouped
             (pack-controls session)])])

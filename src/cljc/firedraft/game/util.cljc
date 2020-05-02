@@ -1,8 +1,12 @@
 (ns firedraft.game.util)
 
 (def supported-sets
-  #{"IKO"
-    "M20"})
+  ["IKO"
+   "M20"])
+
+(def set-numbers
+  {"M20" 280
+   "IKO" 274})
 
 (def supported-set-types
   #{"expansion" "core"})
