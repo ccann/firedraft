@@ -56,16 +56,13 @@
 (defn- format-card
   [m set-code]
   (-> (kebab-case-keys m)
-      (select-keys [:scryfall-oracle-id
-                    :name
+      (select-keys [:name
                     :scryfall-id
-                    :image-uri
                     :type
-                    :is-alternative
+                    :number
                     :is-promo
                     :colors
-                    :rarity
-                    :uuid])
+                    :rarity])
       (assoc :set set-code)))
 
 (defn get-cards-by-set
@@ -139,10 +136,6 @@
 (defn shuffle-deck [game]
   (update game :deck shuffle))
 
-#_(map (juxt :name :rarity :colors :foil?)
-     (packs/create-booster
-      {:cards (get-cards-by-set "IKO")
-       :set-code "IKO"}))
 
 
 ;; (count (filter #(= "common" (:rarity %))

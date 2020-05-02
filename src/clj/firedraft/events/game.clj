@@ -1,9 +1,11 @@
 (ns firedraft.events.game
-  (:require [clojure.tools.logging :as log]
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
+            [clojure.tools.logging :as log]
             [crypto.random :as random]
             [firedraft.cards :as cards]
-            [firedraft.routes.ws :as ws]
             [firedraft.game.util :refer [whose-turn]]
+            [firedraft.routes.ws :as ws]
             [medley.core :refer [find-first]]
             [mount.core :refer [defstate]]))
 
@@ -17,6 +19,17 @@
 
 (defstate *games
   :start (atom {}))
+
+(defn export-picks
+  [{:keys [game-id player-id]}]
+  (->> (get-in @*games [game-id :picks player-id])
+       (map #(cards/get-card (:name %)))
+       (map (juxt :name :set :number))
+       (group-by first)
+       (map (fn [[-name cards]]
+              (let [[_ -set number] (first cards)]
+                (format "%s %s (%s) %s" (count cards) -name -set number))))
+       (str/join "\n")))
 
 (defn new-id []
   (random/hex 16))
