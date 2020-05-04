@@ -25,25 +25,32 @@
 
 (defn picker-modal
   [game]
-  (let [[type ix :as picked] (:pickable @game)]
+  (let [[type ix :as picked] (:pickable @game)
+        cards (:cards @game)]
     [:div.modal {:id "picker"}
-     [:div.modal-background
-      {:on-click close-picker!}]
-     [:div.modal-content.has-background-white
-      [:div.level.modal-card-container
-       [:div.level-item
-        (when (:started? @game)
-          (for [card (:cards @game)]
-            ^{:key (:sid card)}
-            [:figure
-             [:img.card.modal-card
-              {:src (img-uri (:sid card))}]]))]]
+     [:div.modal-background {:on-click close-picker!}]
+     [:div.modal-content.has-background-white.picker-modal
+      [:div.modal-cards
+       [:div.columns.is-centered
+        (for [card cards]
+          ^{:key (:sid card)}
+          [:div.column.modal-card-container
+           [:figure.image
+            [:img.card.modal-card
+             {:style #js
+              {:transform-origin
+               (cond
+                 (< (count cards) 3) "center center"
+                 (= card (first cards)) "center left"
+                 (= card (last cards)) "center right"
+                 :else "center center")}
+              :class (when (< 2 (count cards)) "zoomable-card")
+              :src (img-uri (:sid card))}]]])]]
 
       [:div.level
-       ;; cannot pass on a pick from the deck
        [:div.level-item
         [:div.field.is-grouped.buttons.are-medium.modal-buttons
-         (when (and (= :pile type)
+         (when (and (= :pile type)      ; cannot pass on a pick from the deck
                     (if (= ix 2)
                       (< 0 (:deck-count @game))
                       (< 0 (get-in @game [:piles-count (inc ix)]))))
@@ -62,7 +69,9 @@
                                   (fn callback [{:keys [picks]}]
                                     (swap! game assoc :picks picks)))
                         (close-picker!))}
-          "Pick"]]]]]]))
+          "Pick"]]]]]
+     [:button.modal-close.is-large
+      {:aria-label "close"}]]))
 
 (defn picks [game]
   [:div.tile.is-child
@@ -112,15 +121,16 @@
       [:div.level-item.has-centered-text
        [:div.content.count-label
         [:h4 (str "Deck: " (:deck-count @game))]]]]
-     [:figure.image.is-3by4
-      [:img.card-back.pile-card
-       {:id "deck"
-        :style #js {:position "absolute"}
-        :src "img/card-back-arena.png"
-        :class (dom/classes (when pickable? "pickable")
-                            (when (zero? (:deck-count @game)) "hidden"))
-        :on-click #(when (and is-my-turn? pickable?)
-                     (open-picker!))}]]]))
+     [:div.pile
+      [:figure.image.is-3by4
+       [:img.card-back.pile-card
+        {:id "deck"
+         :style #js {:position "absolute"}
+         :src "img/card-back-arena.png"
+         :class (dom/classes (when pickable? "pickable")
+                             (when (zero? (:deck-count @game)) "hidden"))
+         :on-click #(when (and is-my-turn? pickable?)
+                      (open-picker!))}]]]]))
 
 (defn page [session]
   (r/with-let [game (r/cursor session [:game])]

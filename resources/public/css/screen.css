@@ -41,6 +41,7 @@ body {
 
 .pile {
     position: relative;
+    padding: 0 0.5em 0.5em 0.5em;
 }
 
 .pile-card {
@@ -59,16 +60,28 @@ body {
     border-radius: 13px;
 }
 
+.picker-modal {
+    width: 100%;
+    overflow: visible;
+}
+
+.modal-cards {
+    padding: 2em;
+}
+
 .modal-card-container {
-    padding-left: 2em;
-    padding-right: 2em;
-    padding-top: 2em;
+    /* min-width: 220px; */
+    max-width: 300px;
 }
 
 .modal-card {
-    max-height: 430px;
-    width: 300px;
     border-radius: 13px;
+    transition: transform .3s;
+}
+
+.zoomable-card:hover {
+    transform: scale(1.2);
+    z-index: 1000;
 }
 
 .modal-buttons{
@@ -77,6 +90,8 @@ body {
 
 .pick{
     max-height: 300px;
+    transition: transform .2s;
+    transform-origin: top left;
 }
 
 .picks {
@@ -84,9 +99,8 @@ body {
 }
 
 .pick:hover {
-    max-height: 430px;
+    transform: scale(1.2);
     z-index: 1000;
-    width: 300px;
 }
 
 .hidden {
