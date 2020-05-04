@@ -144,7 +144,11 @@
           [:div.content
            [:p.subtitle "Game ID: "
             [:span.is-family-code.has-background-grey-lighter
-             (:id @game)]]
+             (:id @game)]
+            [:button.button.is-small
+             {:id "copy-button"
+              :on-click #(dom/copy-to-clipboard (:id @game))}
+             "copy"]]
            [:h2 "Players"]
            [:div
             [:ol {:type "1"}

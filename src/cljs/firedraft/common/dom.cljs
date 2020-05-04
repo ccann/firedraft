@@ -22,3 +22,12 @@
 
 (defn classes [& strs]
   (str/join " " strs))
+
+(defn copy-to-clipboard
+  [text]
+  (let [e (js/document.createElement "textarea")]
+    (set! (.-value e) text)
+    (js/document.body.appendChild e)
+    (.select e)
+    (js/document.execCommand "copy")
+    (js/document.body.removeChild e)))

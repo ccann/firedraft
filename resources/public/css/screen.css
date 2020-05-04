@@ -110,3 +110,7 @@ body {
 .count-label h4 {
     margin-bottom: 0;
 }
+
+#copy-button {
+    margin-left: 1em;
+}
