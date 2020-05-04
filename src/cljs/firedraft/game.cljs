@@ -4,7 +4,6 @@
             [firedraft.common.state :as state]
             [firedraft.common.dom :as dom]
             [taoensso.timbre :as log]
-            [ajax.core :as ajax]
             [clojure.string :as str]))
 
 (defn- start-game! [game]
@@ -84,20 +83,26 @@
 
 (defn- pile [game index]
   (let [is-my-turn? (my-turn? @game)
-        pickable? (= [:pile index] (:pickable @game))]
+        pickable? (= [:pile index] (:pickable @game))
+        pile-count (nth (:piles-count @game) index)]
     [:div.tile.is-child
      [:div.level
       [:div.level-item.has-centered-text
-       [:div.content
-        [:h4 (nth (:piles-count @game) index)]]]]
-     [:div.level
-      [:div.level-item
-       [:figure.image
-        [:img.card-back {:id (str "pile-" (inc index))
-                         :class (when pickable? "pickable")
-                         :src "img/card-back-arena.png"
-                         :on-click #(when (and is-my-turn? pickable?)
-                                      (open-picker!))}]]]]]))
+       [:div.content.count-label
+        [:h4 pile-count]]]]
+     [:div.pile
+      [:figure.image.is-3by4
+       (for [n (range pile-count)]
+         ^{:key n}
+         [:img.card-back.pile-card
+          {:id (str "pile-" (inc index))
+           :style #js {:position "absolute"
+                       :top (* n 15)}
+           :class (dom/classes (when pickable? "pickable")
+                               (when (zero? pile-count) "hidden"))
+           :src "img/card-back-arena.png"
+           :on-click #(when (and is-my-turn? pickable?)
+                        (open-picker!))}])]]]))
 
 (defn- deck [game]
   (let [is-my-turn? (my-turn? @game)
@@ -105,16 +110,17 @@
     [:div.tile.is-child
      [:div.level
       [:div.level-item.has-centered-text
-       [:div.content
+       [:div.content.count-label
         [:h4 (str "Deck: " (:deck-count @game))]]]]
-     [:div.level
-      [:div.level-item.has-centered-text
-       [:figure.image
-        [:img.card-back {:id "deck"
-                         :src "img/card-back-arena.png"
-                         :class (when pickable? "pickable")
-                         :on-click #(when (and is-my-turn? pickable?)
-                                      (open-picker!))}]]]]]))
+     [:figure.image.is-3by4
+      [:img.card-back.pile-card
+       {:id "deck"
+        :style #js {:position "absolute"}
+        :src "img/card-back-arena.png"
+        :class (dom/classes (when pickable? "pickable")
+                            (when (zero? (:deck-count @game)) "hidden"))
+        :on-click #(when (and is-my-turn? pickable?)
+                     (open-picker!))}]]]))
 
 (defn page [session]
   (r/with-let [game (r/cursor session [:game])]
@@ -136,6 +142,7 @@
                ^{:key id}
                [:li id])]]]
           (when (and (not (:started? @game))
+                     (not (:over? @game))
                      (= 2 (count (:players @game))))
             [:button.button.is-link
              {:on-click #(start-game! game)}
@@ -158,12 +165,14 @@
            (pile game 1)
            (pile game 2)]
           [:div.tile.is-parent
-           (picks game)]])]]
-     (when (:over? @game)
-       [:div.content
-        [:p
-         (for [line (str/split-lines (:pick-list @game))]
-           [:span line [:br]])]])
+           (picks game)]])
+       (when (:over? @game)
+         [:div.tile.is-vertical.is-parent
+          [:div.content.is-child
+           [:h2 "Pick List"]
+           [:p
+            (for [line (str/split-lines (:pick-list @game))]
+              [:span line [:br]])]]])]]
      #_[:footer.footer
         [:div.content.has-text-centered
          [:p "author: @ccann"]]]]))
