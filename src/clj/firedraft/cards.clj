@@ -61,6 +61,7 @@
       (select-keys [:name
                     :scryfall-id
                     :type
+                    :converted-mana-cost
                     :number
                     :colors
                     :rarity])
@@ -135,8 +136,10 @@
                                   (packs/create-booster
                                    {:cards cards
                                     :set-code set-code}))))
-                      (mapv (fn [m] {:sid (:scryfall-id m)
-                                     :name (:name m)}))))
+                      (mapv (fn [card] {:sid (:scryfall-id card)
+                                        :name (:name card)
+                                        :col (:colors card)
+                                        :cmc (int (:converted-mana-cost card))}))))
 
           :else nil)))
 

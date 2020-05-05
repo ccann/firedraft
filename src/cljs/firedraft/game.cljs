@@ -15,6 +15,14 @@
        id
        "?version=large&format=image"))
 
+(defn open-card-view! []
+  (.add (.-classList (dom/elem "card-view"))
+        "is-active"))
+
+(defn close-card-view! []
+  (.remove (.-classList (dom/elem "card-view"))
+           "is-active"))
+
 (defn open-picker! []
   (.add (.-classList (dom/elem "picker"))
         "is-active"))
@@ -22,6 +30,20 @@
 (defn close-picker! []
   (.remove (.-classList (dom/elem "picker"))
            "is-active"))
+
+(defn card-view-modal
+  [game-atom]
+  (let [close! #(do (swap! game-atom dissoc :card-view)
+                    (close-card-view!))]
+    [:div.modal {:id "card-view"}
+     [:div.modal-background {:on-click close!}
+      [:div.modal-content {:on-click close!}
+       [:figure.image.card-view
+        [:img.card
+         {:src (img-uri (:sid (:card-view @game-atom)))}]]]]
+     [:button.modal-close.is-large
+      {:on-click close-card-view!
+       :aria-label "close"}]]))
 
 (defn picker-modal
   [game]
@@ -38,7 +60,7 @@
            [:figure.image
             [:img.card.modal-card
              {:style #js
-              {:transform-origin
+              {:transformOrigin
                (cond
                  (< (count cards) 3) "center center"
                  (= card (first cards)) "center left"
@@ -71,20 +93,31 @@
                         (close-picker!))}
           "Pick"]]]]]
      [:button.modal-close.is-large
-      {:aria-label "close"}]]))
+      {:on-click close-picker!
+       :aria-label "close"}]]))
 
 (defn picks [game]
-  [:div.tile.is-child
-   [:div.content
-    [:h2 "Picks"]]
-   [:div.picks
-    (for [[i pick] (map vector (range) (:picks @game))]
-      ^{:key i}
-      [:figure
-       [:img.card.pick
-        {:style #js {:position "absolute"
-                     :top (* i 33)}
-         :src (img-uri (:sid pick))}]])]])
+  (let [picks (:picks @game)]
+    [:div.tile.is-parent
+     [:div.tile.is-child.picks-container
+      [:div.content
+       [:h2 "Picks"]]
+      [:div.columns.is-mobile.picks.is-variable.is-1
+       (for [i (range 5)]
+         ^{:key i}
+         [:div.column.is-one-fifth
+          (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)]
+            (for [[j pick] (map vector (range)
+                                (->> picks
+                                     (filter #(op (inc i) (:cmc %)))
+                                     (sort-by (juxt :name :col))))]
+              [:figure.image
+               [:img.card.pick
+                {:style #js {:position "absolute"
+                             :top (* j 25)}
+                 :on-click #(do (swap! game assoc :card-view pick)
+                                (open-card-view!))
+                 :src (img-uri (:sid pick))}]]))])]]]))
 
 (defn- my-turn?
   [game]
@@ -94,7 +127,7 @@
   (let [is-my-turn? (my-turn? @game)
         pickable? (= [:pile index] (:pickable @game))
         pile-count (nth (:piles-count @game) index)]
-    [:div.tile.is-child
+    [:div.column.is-one-quarter
      [:div.level
       [:div.level-item.has-centered-text
        [:div.content.count-label
@@ -103,7 +136,7 @@
       [:figure.image.is-3by4
        (for [n (range pile-count)]
          ^{:key n}
-         [:img.card-back.pile-card
+         [:img.card.pile-card
           {:id (str "pile-" (inc index))
            :style #js {:position "absolute"
                        :top (* n 15)}
@@ -116,14 +149,14 @@
 (defn- deck [game]
   (let [is-my-turn? (my-turn? @game)
         pickable? (= [:deck 0] (:pickable @game))]
-    [:div.tile.is-child
+    [:div.column.is-one-quarter
      [:div.level
       [:div.level-item.has-centered-text
        [:div.content.count-label
         [:h4 (str "Deck: " (:deck-count @game))]]]]
      [:div.pile
       [:figure.image.is-3by4
-       [:img.card-back.pile-card
+       [:img.card.pile-card
         {:id "deck"
          :style #js {:position "absolute"}
          :src "img/card-back-arena.png"
@@ -134,62 +167,67 @@
 
 (defn page [session]
   (r/with-let [game (r/cursor session [:game])]
-    [:div.section
-     [:div.tile.is-ancestor
-      [:div.container.tile.is-vertical
-       [:div.tile
-        [:div.tile.is-8.is-parent
-         [:div.tile.is-child
-          (dom/header)
-          [:div.content
-           [:p.subtitle "Game ID: "
-            [:span.is-family-code.has-background-grey-lighter
-             (:id @game)]
-            [:button.button.is-small
-             {:id "copy-button"
-              :on-click #(dom/copy-to-clipboard (:id @game))}
-             "copy"]]
-           [:h2 "Players"]
-           [:div
-            [:ol {:type "1"}
-             (for [id (:players @game)]
-               ^{:key id}
-               [:li id])]]]
-          (when (and (not (:started? @game))
-                     (not (:over? @game))
-                     (= 2 (count (:players @game))))
-            [:button.button.is-link
-             {:on-click #(start-game! game)}
-             "Start Game"])]]
-        (when (:started? @game)
-          [:div.tile.is-4.is-child
-           [:div.level
-            [:div.level-item.has-centered-text
+    (let [drafting? (:started? @game)
+          postdraft? (:over? @game)
+          predraft? (and (not drafting?) (not (:over? @game)))]
+      [:div.section
+       [:div.tile.is-ancestor
+        [:div.container.tile.is-vertical
+         [:div.tile.is-parent
+          [:div.tile.is-child
+           (dom/header)
+           (when predraft?
+             [:div
+              [:div.content
+               [:p.subtitle "Game ID: "
+                [:span.is-family-code.has-background-light.has-text-primary
+                 (:id @game)]
+                [:button.button.is-small
+                 {:id "copy-button"
+                  :on-click #(dom/copy-to-clipboard (:id @game))}
+                 "copy"]]
+               [:h2 "Players"]
+               [:div
+                [:ol {:type "1"}
+                 (for [id (:players @game)]
+                   ^{:key id}
+                   [:li id])]]]
+              (case (count (:players @game))
+                2 [:button.button.is-link
+                   {:on-click #(start-game! game)}
+                   "Start Game"]
+                1 [:div.content.is-size-4
+                   [:p "Waiting for a second player to join..."]]
+                [:div.content
+                 [:p.has-text-danger.is-size-4
+                  "This game mode only supports 2 players!"]])])]
+          (when drafting?
+            [:div.tile.is-child
              [:div.content
               [:h2 (if (my-turn? @game)
                      "Your Turn"
-                     "Oppo's Turn")]]]]])]
-
-       (picker-modal game)
-       (when (:started? @game)
-         [:div
-          [:div.tile.is-parent
-           (deck game)
-           (pile game 0)
-           (pile game 1)
-           (pile game 2)]
-          [:div.tile.is-parent
-           (picks game)]])
-       (when (:over? @game)
-         [:div.tile.is-vertical.is-parent
-          [:div.content.is-child
-           [:h2 "Pick List"]
-           [:p
-            (for [line (str/split-lines (:pick-list @game))]
-              [:span line [:br]])]]])]]
-     #_[:footer.footer
+                     "Oppo's Turn")]]])]
+         (picker-modal game)
+         (card-view-modal game)
+         [:div.tile.is-parent
+          [:div.tile.is-child
+           (when drafting?
+             [:div.columns.is-mobile
+              (deck game)
+              (pile game 0)
+              (pile game 1)
+              (pile game 2)])]]
+         (when postdraft?
+           [:div.content
+            [:h2 "Pick List"]
+            [:p
+             (for [line (str/split-lines (:pick-list @game))]
+               [:span line [:br]])]])
+         (when drafting?
+           (picks game))]]
+       #_[:footer.footer
         [:div.content.has-text-centered
-         [:p "author: @ccann"]]]]))
+         [:p "author: @ccann"]]]])))
 
 ;; handle stepping through the game state
 ;; whose turn it is may or may not change
