@@ -15,12 +15,12 @@
        id
        "?version=large&format=image"))
 
-(defn open-card-view! []
-  (.add (.-classList (dom/elem "card-view"))
+(defn open-zoom-view! []
+  (.add (.-classList (dom/elem "zoom-view"))
         "is-active"))
 
-(defn close-card-view! []
-  (.remove (.-classList (dom/elem "card-view"))
+(defn close-zoom-view! []
+  (.remove (.-classList (dom/elem "zoom-view"))
            "is-active"))
 
 (defn open-picker! []
@@ -31,67 +31,81 @@
   (.remove (.-classList (dom/elem "picker"))
            "is-active"))
 
-(defn card-view-modal
+(defn make-pick! [game picked]
+  (log/info :send [:game/pick])
+  (ws/send! [:game/pick {:game-id (:id @game)
+                         :picked picked}]
+            1000
+            (fn callback [{:keys [picks]}]
+              (swap! game assoc :picks picks)))
+  (close-picker!))
+
+(defn pass-pick! [game ix]
+  (ws/send! [:game/pass {:game-id (:id @game)
+                         :pile-ix ix}])
+  (close-picker!))
+
+(defn zoom-card! [game card]
+  (swap! game assoc :zoom-view card)
+  (open-zoom-view!))
+
+(defn zoom-view-modal
   [game-atom]
-  (let [close! #(do (swap! game-atom dissoc :card-view)
-                    (close-card-view!))]
-    [:div.modal {:id "card-view"}
-     [:div.modal-background {:on-click close!}
-      [:div.modal-content {:on-click close!}
-       [:figure.image.card-view
-        [:img.card
-         {:src (img-uri (:sid (:card-view @game-atom)))}]]]]
-     [:button.modal-close.is-large
-      {:on-click close-card-view!
-       :aria-label "close"}]]))
+  (let [close! #(do (swap! game-atom dissoc :zoom-view)
+                    (close-zoom-view!))]
+    [:div.modal {:id "zoom-view"}
+     [:div.modal-content
+      {:on-click close!}
+      [:figure.image.zoom-view
+       [:img.card
+        {:src (img-uri (:sid (:zoom-view @game-atom)))}]]]]))
 
 (defn picker-modal
   [game]
   (let [[type ix :as picked] (:pickable @game)
-        cards (:cards @game)]
+        cards (:cards @game)
+        middle (int (/ (count cards) 2))]
     [:div.modal {:id "picker"}
      [:div.modal-background {:on-click close-picker!}]
-     [:div.modal-content.has-background-white.picker-modal
-      [:div.modal-cards
-       [:div.columns.is-centered
-        (for [card cards]
-          ^{:key (:sid card)}
-          [:div.column.modal-card-container
-           [:figure.image
-            [:img.card.modal-card
-             {:style #js
-              {:transformOrigin
-               (cond
-                 (< (count cards) 3) "center center"
-                 (= card (first cards)) "center left"
-                 (= card (last cards)) "center right"
-                 :else "center center")}
-              :class (when (< 2 (count cards)) "zoomable-card")
-              :src (img-uri (:sid card))}]]])]]
+     [:div.modal-content.picker-modal
+      [:div.columns.is-centered.is-mobile.is-multiline
+       (for [[i card] (map vector (range) cards)]
+         ^{:key (:sid card)}
+         [:div.column
+          [:figure.image
+           {:style #js
+            {:float (cond (< i middle) "right"
+                          (< middle i) "left"
+                          :else (if (even? (count cards)) "left" "none"))}}
+           [:img.card.modal-card
+            {:on-click #(zoom-card! game card)
+             :style #js
+             {:transformOrigin
+              (cond
+                (< (count cards) 3) "center center"
+                (= card (first cards)) "center left"
+                (= card (last cards)) "center right"
+                :else "center center")}
+             :src (img-uri (:sid card))}]]])]
 
-      [:div.level
-       [:div.level-item
-        [:div.field.is-grouped.buttons.are-medium.modal-buttons
-         (when (and (= :pile type)      ; cannot pass on a pick from the deck
-                    (if (= ix 2)
-                      (< 0 (:deck-count @game))
-                      (< 0 (get-in @game [:piles-count (inc ix)]))))
-           [:button.button.is-danger
-            {:on-click #(do (ws/send! [:game/pass {:game-id (:id @game)
-                                                   :pile-ix ix}])
-                            (close-picker!))}
-            "Pass"])
+      [:div.columns.is-centered
+       [:div.column.no-padding]
+       [:div.column
+        [:div.level
+         [:div.level-item
+          [:div.field.is-grouped.buttons.are-medium.modal-buttons
+           (when (and (= :pile type) ; cannot pass on a pick from the deck
+                      (if (= ix 2)
+                        (< 0 (:deck-count @game))
+                        (< 0 (get-in @game [:piles-count (inc ix)]))))
+             [:button.button.is-danger
+              {:on-click #(pass-pick! game ix)}
+              "Pass"])
 
-         [:button.button.is-success
-          {:on-click #(do
-                        (log/info :send [:game/pick])
-                        (ws/send! [:game/pick {:game-id (:id @game)
-                                               :picked picked}]
-                                  1000
-                                  (fn callback [{:keys [picks]}]
-                                    (swap! game assoc :picks picks)))
-                        (close-picker!))}
-          "Pick"]]]]]
+           [:button.button.is-success
+            {:on-click #(make-pick! game picked)}
+            "Pick"]]]]]
+       [:div.column.no-padding]]]
      [:button.modal-close.is-large
       {:on-click close-picker!
        :aria-label "close"}]]))
@@ -111,12 +125,16 @@
                                 (->> picks
                                      (filter #(op (inc i) (:cmc %)))
                                      (sort-by (juxt :name :col))))]
+              ^{:key (str i j)}
               [:figure.image
                [:img.card.pick
-                {:style #js {:position "absolute"
-                             :top (* j 25)}
-                 :on-click #(do (swap! game assoc :card-view pick)
-                                (open-card-view!))
+                {:id (str "pick-" i "-" j)
+                 :style #js {:position "absolute"
+                             :top (let [ht (some-> (str "pick-" i "-" (dec j))
+                                                   (dom/elem)
+                                                   (.-clientHeight))]
+                                    (* j (* .11 (or ht 0))))}
+                 :on-click #(zoom-card! game pick)
                  :src (img-uri (:sid pick))}]]))])]]]))
 
 (defn- my-turn?
@@ -136,11 +154,15 @@
       [:figure.image.is-3by4
        (for [n (range pile-count)]
          ^{:key n}
-         [:img.card.pile-card
-          {:id (str "pile-" (inc index))
+         [:img.card-back.pile-card
+          {:id (str "pile-" (inc index) "-" n)
            :style #js {:position "absolute"
-                       :top (* n 15)}
+                       :top (let [ht (some-> (str "pile-" (inc index) "-" (dec n))
+                                             (dom/elem)
+                                             (.-clientHeight))]
+                              (* n (* .06 (or ht 0))))}
            :class (dom/classes (when pickable? "pickable")
+                               (when (my-turn? @game) "pickable-by-me")
                                (when (zero? pile-count) "hidden"))
            :src "img/card-back-arena.png"
            :on-click #(when (and is-my-turn? pickable?)
@@ -156,11 +178,12 @@
         [:h4 (str "Deck: " (:deck-count @game))]]]]
      [:div.pile
       [:figure.image.is-3by4
-       [:img.card.pile-card
+       [:img.card-back.pile-card
         {:id "deck"
          :style #js {:position "absolute"}
          :src "img/card-back-arena.png"
          :class (dom/classes (when pickable? "pickable")
+                             (when (my-turn? @game) "pickable-by-me")
                              (when (zero? (:deck-count @game)) "hidden"))
          :on-click #(when (and is-my-turn? pickable?)
                       (open-picker!))}]]]]))
@@ -208,7 +231,7 @@
                      "Your Turn"
                      "Oppo's Turn")]]])]
          (picker-modal game)
-         (card-view-modal game)
+         (zoom-view-modal game)
          [:div.tile.is-parent
           [:div.tile.is-child
            (when drafting?
