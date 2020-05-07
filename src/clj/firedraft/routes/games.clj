@@ -3,16 +3,9 @@
             [firedraft.middleware :as middleware]
             [ring.util.http-response :as http]))
 
-(defn format-game
-  [game]
-  ;; TODO add players
-  (select-keys game [:mode :id :title]))
-
 (defn read-games
   [_req]
-  (->> (game/available-games)
-       (mapv format-game)
-       http/ok))
+  (http/ok (game/available-games)))
 
 (defn routes []
   ["/games" {:middleware [;; middleware/wrap-csrf

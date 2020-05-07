@@ -90,16 +90,14 @@
 
 (defn- join-game!
   [session game-id]
-  (let [payload (-> (:game @session)
-                    (assoc :id game-id))]
-    (log/info "join game:" game-id)
-    (ws/send! [:game/join payload]
-              2000
-              (fn callback [data]
-                (if (:error data)
-                  (log/error [:game/join (:error data)])
-                  (do (swap! session assoc :game data)
-                      (page/nav! session :game)))))))
+  (log/info "join game:" game-id)
+  (ws/send! [:game/join game-id]
+            2000
+            (fn callback [data]
+              (if (:error data)
+                (log/error [:game/join (:error data)])
+                (do (swap! session assoc :game data)
+                    (page/nav! session :game))))))
 
 (defn section-join-game
   [session]

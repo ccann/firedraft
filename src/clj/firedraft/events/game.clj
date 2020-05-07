@@ -21,7 +21,8 @@
 
 (defn available-games []
   (->> (vals @*games)
-       (map #(assoc % :joinable? (not= 2 (count (:players %)))))
+       (remove (comp empty? :players))
+       (map #(assoc % :joinable? (= 1 (count (:players %)))))
        (map #(select-keys % [:id :mode :name :joinable?]))))
 
 (defn export-picks
@@ -59,7 +60,7 @@
 (defn join-game
   [{:keys [event uid ?data ?reply-fn]}]
   (log/info (first event) (:id (second event)))
-  (let [id (:id ?data)]
+  (let [id ?data]
     (if-let [game (get @*games id)]
       (let [game (update game :players conj uid)
             players (:players game)]
