@@ -1,6 +1,6 @@
 (ns firedraft.core
   (:require [clojure.string :as string]
-            [firedraft.ajax :as ajax]
+            [firedraft.ajax :as fd.ajax]
             [firedraft.lobby :as lobby]
             [firedraft.game :as game]
             [firedraft.ws :as ws]
@@ -8,7 +8,9 @@
             [goog.history.EventType :as HistoryEventType]
             [reagent.dom :as dom]
             [reitit.core :as reitit]
-            [firedraft.common.state :refer [session]])
+            [firedraft.common.state :refer [session]]
+            [taoensso.timbre :as log]
+            [ajax.core :as ajax])
   (:import goog.History))
 
 (def pages
@@ -46,7 +48,16 @@
 (defn mount-components []
   (dom/render [#'page] (.getElementById js/document "app")))
 
+(defn- fetch-available-games! [session]
+  (ajax/GET "/games"
+      {:response-format :json
+       :keywords? true
+       :handler (fn [data]
+                  (log/info :available-games data)
+                  (swap! session assoc :games data))}))
+
 (defn init! []
   (ws/start-router!)
-  (ajax/load-interceptors!)
-  (mount-components))
+  (fd.ajax/load-interceptors!)
+  (mount-components)
+  (fetch-available-games! session))

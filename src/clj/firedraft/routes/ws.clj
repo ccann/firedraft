@@ -4,7 +4,8 @@
             [ring.middleware.keyword-params :as ring.mw.keyword-params]
             [ring.middleware.params :as ring.mw.params]
             [taoensso.sente :as sente]
-            [taoensso.sente.server-adapters.http-kit  :refer [get-sch-adapter]]))
+            [taoensso.sente.server-adapters.http-kit  :refer [get-sch-adapter]]
+            [clojure.set :as set]))
 
 (defn client-id [ring-req]
   (get-in ring-req [:params :client-id]))
@@ -27,17 +28,24 @@
 (add-watch connected-uids
            :connected-uids
            (fn [_ _ old new]
-             (when (not= old new)
-               (println new)
-               (log/info "UID connected: " new))))
+             (let [[old-ws new-ws] [(set (:any old))
+                                    (set (:any new))]]
+               (when-let [new-uid (first (set/difference new-ws old-ws))]
+                 (log/info :uid-connected new-uid)))))
 
 (defmulti handle-event
   "Multimethod to handle Sente `event-msg`s. Dispatch on event ID."
   :id)
 
+(defmethod handle-event :chsk/ws-ping [_] (log/debug "ws ping"))
+
+(defmethod handle-event :chsk/uidport-open
+  [{:keys [?data]}]
+  (log/debug :uidport-opened {:uid ?data}))
+
 (defmethod handle-event :default
   [{:keys [event ?reply-fn]}]
-  (log/errorf "Unhandled event: %s" event)
+  (log/debugf "Unhandled event: %s" event)
   (when ?reply-fn
     (?reply-fn {:umatched-event-as-echoed-from-server event})))
 

@@ -1,15 +1,14 @@
 (ns firedraft.events.game
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [crypto.random :as random]
             [firedraft.cards :as cards]
-            [firedraft.game.util :refer [whose-turn]]
+            [firedraft.game.util :as g :refer [whose-turn]]
             [firedraft.routes.ws :as ws]
             [medley.core :refer [find-first]]
             [mount.core :refer [defstate]]))
 
-;; {:title "Our Fun Game"
+;; {:name "Our Fun Game"
 ;;  :id "8njcTLq0ZVnebaPtXrXhpXG1+bEnCyK8vtY8wt+EAuk="
 ;;  :mode "winston"
 ;;  :opts {:booster ["IKO" "IKO" "IKO"
@@ -19,6 +18,11 @@
 
 (defstate *games
   :start (atom {}))
+
+(defn available-games []
+  (->> (vals @*games)
+       (map #(assoc % :joinable? (not= 2 (count (:players %)))))
+       (map #(select-keys % [:id :mode :name :joinable?]))))
 
 (defn export-picks
   [{:keys [game-id player-id]}]
@@ -34,20 +38,9 @@
 (defn new-id []
   (random/hex 16))
 
-(defn join-game
-  [{:keys [event uid ?data ?reply-fn]}]
-  (log/info (first event) (:id (second event)))
-  (let [id (:id ?data)]
-    (if-let [game (get @*games id)]
-      (let [game (update game :players conj uid)
-            players (:players game)]
-        (log/info "join game:" uid)
-        (swap! *games assoc-in [id :players] players)
-        (doseq [uid players]
-          (ws/send! uid [:game/joined game]))
-        (?reply-fn (assoc game :player uid)))
-      (do (log/error :game-404 id)
-          (?reply-fn {:error :not-found})))))
+(defn broadcast-available-games! []
+  (doseq [uid (:any @ws/connected-uids)]
+    (ws/send! uid [:games/available (available-games)])))
 
 (defn create-game
   [{:keys [event ?data uid ?reply-fn]}]
@@ -55,11 +48,29 @@
   (when ?reply-fn
     (let [id (new-id)
           game (assoc ?data
+                      :name (g/random-title)
                       :id id
                       :players [uid])]
       (swap! *games assoc id game)
       (log/info "create game:" game)
+      (broadcast-available-games!)
       (?reply-fn (assoc game :player uid)))))
+
+(defn join-game
+  [{:keys [event uid ?data ?reply-fn]}]
+  (log/info (first event) (:id (second event)))
+  (let [id (:id ?data)]
+    (if-let [game (get @*games id)]
+      (let [game (update game :players conj uid)
+            players (:players game)]
+        (log/info :join-game {:player uid})
+        (swap! *games assoc-in [id :players] players)
+        (doseq [uid players]
+          (ws/send! uid [:game/joined game]))
+        (broadcast-available-games!)
+        (?reply-fn (assoc game :player uid)))
+      (do (log/error :game-404 id)
+          (?reply-fn {:error :not-found})))))
 
 (defn- toggle-turn
   [game]
@@ -75,7 +86,6 @@
     (assoc game
            :piles [[c1] [c2] [c3]]
            :deck (vec deck))))
-
 
 (defn add-picks
   [game player-id picks]

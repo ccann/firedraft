@@ -1,4 +1,6 @@
-(ns firedraft.game.util)
+(ns firedraft.game.util
+  (:require [firedraft.creature-types :as ct]
+            [clojure.string :as str]))
 
 (def supported-sets
   ["IKO"
@@ -7,6 +9,9 @@
 (def set-numbers
   {"M20" 280
    "IKO" 274})
+
+(def modes
+  #{"winston"})
 
 (def supported-set-types
   #{"expansion" "core"})
@@ -26,3 +31,8 @@
 
 (def default-game-config
   (get game-defaults default-game-mode))
+
+(defn random-title []
+  (str/lower-case (str (rand-nth ct/descriptors)
+                       "-"
+                       (rand-nth ct/types))))

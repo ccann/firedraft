@@ -57,18 +57,17 @@
   (let [winston? (= "winston" (get-in @session [:game :mode]))]
     [:div.section
      [:div.container
-      (dom/header)
       [:div.content
-       [:h2 "Lobby"]]
-      [:div.content
-       [:p.subtitle "Create A Game"]]
+       [:h3 "Create A Game"]]
       [:div.field
        [:label.label "Mode"]
        [:div.control
         {:on-change #(set-game-mode! % session)}
         [:div.select
          [:select
-          [:option "winston"]]]]]
+          (for [mode g/modes]
+            ^{:key mode}
+            [:option mode])]]]]
 
       (when winston?
         [:div.field
@@ -85,14 +84,13 @@
 
       [:div.field
        [:div.control
-        [:button.button.is-link
+        [:button.button.is-primary
          {:on-click #(create-game! session)}
          "Create Game"]]]]]))
 
 (defn- join-game!
-  [session]
-  (let [game-id (dom/elem-val "game-id-input")
-        payload (-> (:game @session)
+  [session game-id]
+  (let [payload (-> (:game @session)
                     (assoc :id game-id))]
     (log/info "join game:" game-id)
     (ws/send! [:game/join payload]
@@ -107,21 +105,37 @@
   [session]
   [:div.section
    [:div.container
-    [:p.subtitle "Join A Game"]
-    [:div.field
-     [:div.control
-      [:input.input.is-primary
-       {:id "game-id-input"
-        :type "text"
-        :placeholder "Game ID"}]]]
-    [:div.field
-     [:div.control
-      [:button.button.is-link
-       {:on-click #(join-game! session)}
-       "Join Game"]]]]])
+    [:div.content
+     [:h3 "Games"]
+     (if (seq (:games @session))
+       [:table.table.is-bordered.is-striped.is-hoverable.is-narrow
+        [:thead
+         [:tr
+          [:th "Status"]
+          [:th "Name"]
+          [:th "Mode"]
+          [:th "Code"]]]
+        [:tbody
+         (doall
+          (for [game (->> (:games @session)
+                          (sort-by :joinable?))]
+            ^{:key game}
+            [:tr
+             [:td (if (:joinable? game)
+                    [:div.field
+                     [:div.control
+                      [:a {:on-click #(join-game! session (:id game))}
+                       "Join Game"]]]
+                    "Full")]
+             [:td (:name game)]
+             [:td (:mode game)]
+             [:td {:id "game-id-input"}
+              [:span.is-family-code (:id game)]]]))]]
+       [:p "No games avaiable. How about creating one?"])]]])
 
 (defn page [session]
   [:div
+   (dom/header)
    (section-create-game session)
    (section-join-game session)])
 
@@ -130,5 +144,9 @@
   (log/info :handle :game/joined)
   (let [players (:players message)]
     (log/info "set players:" (pr-str players))
-    (when-let [players (:players message)]
-      (swap! state/session assoc-in [:game :players] players))))
+    (swap! state/session assoc-in [:game :players] players)))
+
+(defmethod ws/handle-message :games/available
+  [{:keys [message]}]
+  (log/info :handle :games/available)
+  (swap! state/session assoc :games message))

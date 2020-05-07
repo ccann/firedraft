@@ -17,8 +17,11 @@
 (def fire-emoji "🔥")
 
 (defn header []
-  [:div.content
-   [:h1.title  (str fire-emoji " Firedraft")]])
+  [:div.section {:id "app-title"}
+   [:div.container
+    [:div.content
+     [:h1.title
+      (str fire-emoji " Firedraft")]]]])
 
 (defn classes [& strs]
   (str/join " " strs))

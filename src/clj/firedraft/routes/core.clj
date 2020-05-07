@@ -1,14 +1,14 @@
 (ns firedraft.routes.core
-  (:require
-    [firedraft.middleware :as middleware]
-    [firedraft.layout :refer [error-page]]
-    [firedraft.routes.home :as home]
-    [firedraft.routes.ws :as ws]
-    [reitit.ring :as ring]
-    [ring.middleware.content-type :refer [wrap-content-type]]
-    [ring.middleware.webjars :refer [wrap-webjars]]
-    [firedraft.env :refer [defaults]]
-    [mount.core :as mount]))
+  (:require [firedraft.env :refer [defaults]]
+            [firedraft.layout :refer [error-page]]
+            [firedraft.middleware :as middleware]
+            [firedraft.routes.games :as games]
+            [firedraft.routes.home :as home]
+            [firedraft.routes.ws :as ws]
+            [mount.core :as mount]
+            [reitit.ring :as ring]
+            [ring.middleware.content-type :refer [wrap-content-type]]
+            [ring.middleware.webjars :refer [wrap-webjars]]))
 
 (mount/defstate init-app
   :start ((or (:init defaults) (fn [])))
@@ -19,7 +19,8 @@
   (ring/ring-handler
    (ring/router
     [(home/routes)
-     (ws/routes)])
+     (ws/routes)
+     (games/routes)])
    (ring/routes
     (ring/create-resource-handler
      {:path "/"})

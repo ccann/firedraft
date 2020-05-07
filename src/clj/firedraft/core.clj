@@ -1,14 +1,12 @@
 (ns firedraft.core
-  (:require
-   [firedraft.routes.core :refer [app]]
-   [firedraft.nrepl :as nrepl]
-   [luminus.http-server :as http]
-   [firedraft.config :refer [env]]
-   [clojure.tools.cli :refer [parse-opts]]
-   [clojure.tools.logging :as log]
-   [mount.core :as mount]
-   firedraft.events.game)
-  (:gen-class))
+  (:gen-class)
+  (:require [clojure.tools.cli :refer [parse-opts]]
+            [clojure.tools.logging :as log]
+            [firedraft.config :refer [env]]
+            [firedraft.nrepl :as nrepl]
+            [firedraft.routes.core :refer [app]]
+            [luminus.http-server :as http]
+            [mount.core :as mount]))
 
 ;; log uncaught exceptions in threads
 (Thread/setDefaultUncaughtExceptionHandler

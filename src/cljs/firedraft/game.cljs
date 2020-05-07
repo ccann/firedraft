@@ -11,9 +11,10 @@
 
 (defn- img-uri
   [id]
-  (str "https://api.scryfall.com/cards/"
-       id
-       "?version=large&format=image"))
+  (when id
+    (str "https://api.scryfall.com/cards/"
+         id
+         "?version=large&format=image")))
 
 (defn open-zoom-view! []
   (.add (.-classList (dom/elem "zoom-view"))
@@ -69,24 +70,25 @@
      [:div.modal-background {:on-click close-picker!}]
      [:div.modal-content.picker-modal
       [:div.columns.is-centered.is-mobile.is-multiline
-       (for [[i card] (map vector (range) cards)]
-         ^{:key (:sid card)}
-         [:div.column
-          [:figure.image
-           {:style #js
-            {:float (cond (< i middle) "right"
-                          (< middle i) "left"
-                          :else (if (even? (count cards)) "left" "none"))}}
-           [:img.card.modal-card
-            {:on-click #(zoom-card! game card)
-             :style #js
-             {:transformOrigin
-              (cond
-                (< (count cards) 3) "center center"
-                (= card (first cards)) "center left"
-                (= card (last cards)) "center right"
-                :else "center center")}
-             :src (img-uri (:sid card))}]]])]
+       (doall
+        (for [[i card] (map vector (range) cards)]
+          ^{:key (:sid card)}
+          [:div.column
+           [:figure.image
+            {:style #js
+             {:float (cond (< i middle) "right"
+                           (< middle i) "left"
+                           :else (if (even? (count cards)) "left" "none"))}}
+            [:img.card.modal-card
+             {:on-click #(zoom-card! game card)
+              :style #js
+              {:transformOrigin
+               (cond
+                 (< (count cards) 3) "center center"
+                 (= card (first cards)) "center left"
+                 (= card (last cards)) "center right"
+                 :else "center center")}
+              :src (img-uri (:sid card))}]]]))]
 
       [:div.columns.is-centered
        [:div.column.no-padding]
@@ -117,25 +119,27 @@
       [:div.content
        [:h2 "Picks"]]
       [:div.columns.is-mobile.picks.is-variable.is-1
-       (for [i (range 5)]
-         ^{:key i}
-         [:div.column.is-one-fifth
-          (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)]
-            (for [[j pick] (map vector (range)
-                                (->> picks
-                                     (filter #(op (inc i) (:cmc %)))
-                                     (sort-by (juxt :name :col))))]
-              ^{:key (str i j)}
-              [:figure.image
-               [:img.card.pick
-                {:id (str "pick-" i "-" j)
-                 :style #js {:position "absolute"
-                             :top (let [ht (some-> (str "pick-" i "-" (dec j))
-                                                   (dom/elem)
-                                                   (.-clientHeight))]
-                                    (* j (* .11 (or ht 0))))}
-                 :on-click #(zoom-card! game pick)
-                 :src (img-uri (:sid pick))}]]))])]]]))
+       (doall
+        (for [i (range 5)]
+          ^{:key i}
+          [:div.column.is-one-fifth
+           (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)]
+             (doall
+              (for [[j pick] (map vector (range)
+                                  (->> picks
+                                       (filter #(op (inc i) (:cmc %)))
+                                       (sort-by (juxt :name :col))))]
+                ^{:key (str i j)}
+                [:figure.image
+                 [:img.card.pick
+                  {:id (str "pick-" i "-" j)
+                   :style #js {:position "absolute"
+                               :top (let [ht (some-> (str "pick-" i "-" (dec j))
+                                                     (dom/elem)
+                                                     (.-clientHeight))]
+                                      (* j (* .11 (or ht 0))))}
+                   :on-click #(zoom-card! game pick)
+                   :src (img-uri (:sid pick))}]])))]))]]]))
 
 (defn- my-turn?
   [game]
@@ -152,21 +156,22 @@
         [:h4 pile-count]]]]
      [:div.pile
       [:figure.image.is-3by4
-       (for [n (range pile-count)]
-         ^{:key n}
-         [:img.card-back.pile-card
-          {:id (str "pile-" (inc index) "-" n)
-           :style #js {:position "absolute"
-                       :top (let [ht (some-> (str "pile-" (inc index) "-" (dec n))
-                                             (dom/elem)
-                                             (.-clientHeight))]
-                              (* n (* .06 (or ht 0))))}
-           :class (dom/classes (when pickable? "pickable")
-                               (when (my-turn? @game) "pickable-by-me")
-                               (when (zero? pile-count) "hidden"))
-           :src "img/card-back-arena.png"
-           :on-click #(when (and is-my-turn? pickable?)
-                        (open-picker!))}])]]]))
+       (doall
+        (for [n (range pile-count)]
+          ^{:key n}
+          [:img.card-back.pile-card
+           {:id (str "pile-" (inc index) "-" n)
+            :style #js {:position "absolute"
+                        :top (let [ht (some-> (str "pile-" (inc index) "-" (dec n))
+                                              (dom/elem)
+                                              (.-clientHeight))]
+                               (* n (* .06 (or ht 0))))}
+            :class (dom/classes (when pickable? "pickable")
+                                (when (my-turn? @game) "pickable-by-me")
+                                (when (zero? pile-count) "hidden"))
+            :src "img/card-back-arena.png"
+            :on-click #(when (and is-my-turn? pickable?)
+                         (open-picker!))}]))]]]))
 
 (defn- deck [game]
   (let [is-my-turn? (my-turn? @game)
@@ -193,28 +198,32 @@
     (let [drafting? (:started? @game)
           postdraft? (:over? @game)
           predraft? (and (not drafting?) (not (:over? @game)))]
-      [:div.section
-       [:div.tile.is-ancestor
-        [:div.container.tile.is-vertical
-         [:div.tile.is-parent
-          [:div.tile.is-child
-           (dom/header)
+      [:div (dom/header)
+       [:div.section
+        [:div.tile.is-ancestor
+         [:div.container.tile.is-vertical
+          [:div.tile.is-parent
            (when predraft?
-             [:div
+             [:div.tile.is-child
               [:div.content
-               [:p.subtitle "Game ID: "
-                [:span.is-family-code.has-background-light.has-text-primary
-                 (:id @game)]
-                [:button.button.is-small
-                 {:id "copy-button"
-                  :on-click #(dom/copy-to-clipboard (:id @game))}
-                 "copy"]]
+               [:div.tags.has-addons.are-medium
+                [:span.tag.is-dark "name"]
+                [:span.tag.is-primary (:name @game)]]
+               [:div.tags.has-addons.are-medium
+                [:span.tag.is-dark
+                 "mode"]
+                [:span.tag.is-primary
+                 (:mode @game)]
+                (when-let [subtype (case (keys (:opts @game))
+                                     [:booster] "booster")]
+                  [:span.tag.is-info subtype])]
                [:h2 "Players"]
                [:div
-                [:ol {:type "1"}
-                 (for [id (:players @game)]
-                   ^{:key id}
-                   [:li id])]]]
+                (for [[i id] (map vector (range) (:players @game))]
+                  ^{:key id}
+                  [:div.tags.has-addons.are-medium
+                   [:span.tag.is-dark (inc i)]
+                   [:span.tag.is-family-code.is-primary id]])]]
               (case (count (:players @game))
                 2 [:button.button.is-link
                    {:on-click #(start-game! game)}
@@ -223,34 +232,34 @@
                    [:p "Waiting for a second player to join..."]]
                 [:div.content
                  [:p.has-text-danger.is-size-4
-                  "This game mode only supports 2 players!"]])])]
-          (when drafting?
-            [:div.tile.is-child
-             [:div.content
-              [:h2 (if (my-turn? @game)
-                     "Your Turn"
-                     "Oppo's Turn")]]])]
-         (picker-modal game)
-         (zoom-view-modal game)
-         [:div.tile.is-parent
-          [:div.tile.is-child
+                  "This game mode only supports 2 players!"]])])
            (when drafting?
-             [:div.columns.is-mobile
-              (deck game)
-              (pile game 0)
-              (pile game 1)
-              (pile game 2)])]]
-         (when postdraft?
-           [:div.content
-            [:h2 "Pick List"]
-            [:p
-             (for [line (str/split-lines (:pick-list @game))]
-               [:span line [:br]])]])
-         (when drafting?
-           (picks game))]]
-       #_[:footer.footer
-        [:div.content.has-text-centered
-         [:p "author: @ccann"]]]])))
+             [:div.tile.is-child
+              [:div.content.has-text-centered
+               [:h2 (if (my-turn? @game)
+                      "Your Turn"
+                      "Oppo's Turn")]]])]
+          (picker-modal game)
+          (zoom-view-modal game)
+          [:div.tile.is-parent
+           [:div.tile.is-child
+            (when drafting?
+              [:div.columns.is-mobile
+               (deck game)
+               (pile game 0)
+               (pile game 1)
+               (pile game 2)])]]
+          (when postdraft?
+            [:div.content
+             [:h2 "Pick List"]
+             [:p
+              (for [line (str/split-lines (:pick-list @game))]
+                [:span line [:br]])]])
+          (when drafting?
+            (picks game))]]
+        #_[:footer.footer
+           [:div.content.has-text-centered
+            [:p "author: @ccann"]]]]])))
 
 ;; handle stepping through the game state
 ;; whose turn it is may or may not change
@@ -272,3 +281,8 @@
   (swap! state/session assoc-in [:game :pick-list] message)
   (swap! state/session assoc-in [:game :started?] false)
   (swap! state/session assoc-in [:game :over?] true))
+
+(defmethod ws/handle-message :game/update-players
+  [{:keys [message]}]
+  (log/info :handle :game/update-players)
+  (swap! state/session assoc-in [:game :players] message))
