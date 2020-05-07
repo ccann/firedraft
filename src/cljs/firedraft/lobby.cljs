@@ -58,7 +58,7 @@
     [:div.section
      [:div.container
       [:div.content
-       [:h3 "Create A Game"]]
+       [:h3 "Create A Draft"]]
       [:div.field
        [:label.label "Mode"]
        [:div.control
@@ -86,7 +86,7 @@
        [:div.control
         [:button.button.is-primary
          {:on-click #(create-game! session)}
-         "Create Game"]]]]]))
+         "Create Draft"]]]]]))
 
 (defn- join-game!
   [session game-id]
@@ -106,7 +106,7 @@
   [:div.section
    [:div.container
     [:div.content
-     [:h3 "Games"]
+     [:h3 "Drafts"]
      (if (seq (:games @session))
        [:table.table.is-bordered.is-striped.is-hoverable.is-narrow
         [:thead
@@ -125,13 +125,13 @@
                     [:div.field
                      [:div.control
                       [:a {:on-click #(join-game! session (:id game))}
-                       "Join Game"]]]
+                       "Join Draft"]]]
                     "Full")]
              [:td (:name game)]
              [:td (:mode game)]
              [:td {:id "game-id-input"}
               [:span.is-family-code (:id game)]]]))]]
-       [:p "No games avaiable. How about creating one?"])]]])
+       [:p "No drafts avaiable. How about creating one?"])]]])
 
 (defn page [session]
   [:div

@@ -227,12 +227,12 @@
               (case (count (:players @game))
                 2 [:button.button.is-link
                    {:on-click #(start-game! game)}
-                   "Start Game"]
+                   "Start Draft"]
                 1 [:div.content.is-size-4
                    [:p "Waiting for a second player to join..."]]
                 [:div.content
                  [:p.has-text-danger.is-size-4
-                  "This game mode only supports 2 players!"]])])
+                  "This draft mode only supports 2 players!"]])])
            (when drafting?
              [:div.tile.is-child
               [:div.content.has-text-centered

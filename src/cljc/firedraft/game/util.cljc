@@ -32,7 +32,7 @@
 (def default-game-config
   (get game-defaults default-game-mode))
 
-(defn random-title []
+(defn random-name []
   (str/lower-case (str (rand-nth ct/descriptors)
                        "-"
                        (rand-nth ct/types))))

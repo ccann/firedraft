@@ -48,7 +48,7 @@
   (when ?reply-fn
     (let [id (new-id)
           game (assoc ?data
-                      :name (g/random-title)
+                      :name (g/random-name)
                       :id id
                       :players [uid])]
       (swap! *games assoc id game)
