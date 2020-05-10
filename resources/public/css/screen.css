@@ -35,6 +35,9 @@ body {
 
 .pile {
     position: relative;
+    max-width: 200px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .pile-card {
@@ -67,16 +70,23 @@ body {
 }
 
 .zoom-view {
-    max-width: 600px;
-    z-index: 2000;
+    max-width: 500px;
+    z-index: 999;
     width: 60%;
     margin-left: auto;
     margin-right: auto;
-    padding-top: 2em;
 }
 
 .picker-modal {
-    overflow: visible;
+    overflow-y: auto;
+    height: 100%;
+    margin-top: 15%;
+    margin-left: 0px;
+    margin-right: 0px;
+}
+
+#picker-modal-columns {
+    margin: 0px;
 }
 
 .modal-cards {
@@ -94,22 +104,46 @@ body {
     max-width: 320px;
 }
 
+.modal-column {
+    max-width: 320px;
+}
+
+.pile-column {
+    max-width: 320px;
+}
+
+.section {
+    padding-top: 0.5em;
+}
+
 .no-padding {
     padding: 0px;
 }
 
 .modal-card:hover {
     transform: scale(1.05);
-    z-index: 1000;
+    z-index: 999;
 }
 
 .modal-buttons{
     padding-bottom: 2em;
 }
 
-.pick{
-    transition: transform .2s;
-    transform-origin: top center;
+.pick-fig {
+    cursor: pointer;
+}
+
+.pick-fig:hover {
+    z-index: 999;
+}
+
+.last-card-in-pick-col {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.pick {
+    pointer-events: none;
 }
 
 .picks-container {
@@ -118,12 +152,7 @@ body {
 }
 
 .picks {
-    position: relative;
-}
-
-.pick:hover {
-    transform: scale(1.05);
-    z-index: 2;
+    positionc: relative;
 }
 
 .hidden {

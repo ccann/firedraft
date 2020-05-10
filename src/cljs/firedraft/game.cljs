@@ -10,11 +10,13 @@
   (ws/send! [:game/start (:id @game)]))
 
 (defn- img-uri
-  [id]
+  [id & [version]]
   (when id
     (str "https://api.scryfall.com/cards/"
          id
-         "?version=large&format=image")))
+         "?version="
+         (or version "large")
+         "&format=image")))
 
 (defn open-zoom-view! []
   (.add (.-classList (dom/elem "zoom-view"))
@@ -64,21 +66,18 @@
 (defn picker-modal
   [game]
   (let [[type ix :as picked] (:pickable @game)
-        cards (:cards @game)
-        middle (int (/ (count cards) 2))]
+        cards (:cards @game)]
     [:div.modal {:id "picker"}
      [:div.modal-background {:on-click close-picker!}]
      [:div.modal-content.picker-modal
       [:div.columns.is-centered.is-mobile.is-multiline
+       {:id "picker-modal-columns"}
        (doall
-        (for [[i card] (map vector (range) cards)]
+        (for [card cards]
           ^{:key (:sid card)}
-          [:div.column
+          [:div.column.modal-column
+           {:class (when (<= 5 (count cards)) "is-one-fifth")}
            [:figure.image
-            {:style #js
-             {:float (cond (< i middle) "right"
-                           (< middle i) "left"
-                           :else (if (even? (count cards)) "left" "none"))}}
             [:img.card.modal-card
              {:on-click #(zoom-card! game card)
               :style #js
@@ -118,28 +117,31 @@
      [:div.tile.is-child.picks-container
       [:div.content
        [:h2 "Picks"]]
-      [:div.columns.is-mobile.picks.is-variable.is-1
+      [:div.columns.is-mobile.picks.is-variable
        (doall
         (for [i (range 5)]
           ^{:key i}
           [:div.column.is-one-fifth
-           (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)]
+           (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)
+                 col-picks (->> picks
+                                (filter #(op (inc i) (:cmc %)))
+                                (sort-by (juxt :col :name)))]
              (doall
-              (for [[j pick] (map vector (range)
-                                  (->> picks
-                                       (filter #(op (inc i) (:cmc %)))
-                                       (sort-by (juxt :name :col))))]
+              (for [[j pick] (map vector (range) col-picks)]
                 ^{:key (str i j)}
                 [:figure.image
+                 (merge
+                  {:on-click #(zoom-card! game pick)}
+                  (if (= (inc j) (count col-picks))
+                    {:class "last-card-in-pick-col"
+                     :id (str "last-card-" i)}
+                    {:class "pick-fig"
+                     :style #js{:height (let [ht (some-> (str "last-card-" i)
+                                                         (dom/elem)
+                                                         (.-clientHeight))]
+                                          (* 0.1 (or ht 0)))}}))
                  [:img.card.pick
-                  {:id (str "pick-" i "-" j)
-                   :style #js {:position "absolute"
-                               :top (let [ht (some-> (str "pick-" i "-" (dec j))
-                                                     (dom/elem)
-                                                     (.-clientHeight))]
-                                      (* j (* .11 (or ht 0))))}
-                   :on-click #(zoom-card! game pick)
-                   :src (img-uri (:sid pick))}]])))]))]]]))
+                  {:src (img-uri (:sid pick))}]])))]))]]]))
 
 (defn- my-turn?
   [game]
@@ -149,11 +151,11 @@
   (let [is-my-turn? (my-turn? @game)
         pickable? (= [:pile index] (:pickable @game))
         pile-count (nth (:piles-count @game) index)]
-    [:div.column.is-one-quarter
+    [:div.column.is-one-quarter.pile-column
      [:div.level
       [:div.level-item.has-centered-text
        [:div.content.count-label
-        [:h4 pile-count]]]]
+        [:h4 (str "Pile " (inc index))]]]]
      [:div.pile
       [:figure.image.is-3by4
        (doall

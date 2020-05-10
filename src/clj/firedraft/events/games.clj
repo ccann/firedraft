@@ -2,9 +2,10 @@
   (:require [clojure.tools.logging :as log]
             [firedraft.events.game :as game :refer [*games]]
             [firedraft.routes.ws :as ws]
-            [medley.core :refer [find-first]]))
+            [medley.core :refer [find-first]]
+            [mount.core :refer [defstate]]))
 
-(defn update-players!
+(defn- update-players!
   [games dropped-uid]
   (if-let [game-entry (find-first #(contains? (set (:players (val %)))
                                               dropped-uid)
@@ -20,7 +21,7 @@
         (dissoc games (:id game))))
     games))
 
-(defmethod ws/handle-event :chsk/uidport-close
+(defn- drop-player!
   [{:keys [?data]}]
   (let [disconnected-uid ?data]
     (log/info :drop-player disconnected-uid)
@@ -28,3 +29,7 @@
     (swap! *games #(update-players! % disconnected-uid))
     (log/info :games-count (count @*games))
     (game/broadcast-available-games!)))
+
+(defstate event-handlers
+  :start
+  (defmethod ws/handle-event :chsk/uidport-close [msg] (drop-player! msg)))
