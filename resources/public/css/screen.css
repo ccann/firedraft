@@ -35,7 +35,7 @@ body {
 
 .pile {
     position: relative;
-    max-width: 200px;
+    max-width: 180px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -79,8 +79,9 @@ body {
 
 .picker-modal {
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
-    margin-top: 15%;
+    margin-top: 8%;
     margin-left: 0px;
     margin-right: 0px;
 }

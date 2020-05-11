@@ -2,13 +2,46 @@
   (:require [firedraft.creature-types :as ct]
             [clojure.string :as str]))
 
-(def supported-sets
-  ["IKO"
-   "M20"])
+(def sets
+  [{:code "IKO"
+    :name "Ikoria: Lair of Behemoths"
+    :number 274}
+   {:code "THB"
+    :name "Theros: Beyond Death"
+    :number 254}
+   {:code "ELD"
+    :name "Throne of Eldraine"
+    :number 269}
+   {:code "M20"
+    :name "Core Set 2020"
+    :number 280}
+   {:code "WAR"
+    :name "War of the Spark"
+    :number 264}
+   {:code "RNA"
+    :name "Ravnica Allegiance"
+    :number 259}
+   {:code "GRN"
+    :name "Guilds of Ravnica"
+    :number 259}
+   {:code "M19"
+    :name "Core Set 2019"
+    :number 280}
+   {:code "DOM"
+    :name "Dominaria"
+    :number 269}
+   {:code "RIX"
+    :name "Rivals of Ixalan"
+    :number 196}
+   {:code "XLN"
+    :name "Ixalan"
+    :number 279}])
 
 (def set-numbers
-  {"M20" 280
-   "IKO" 274})
+  (zipmap (map :code sets) (map :number sets)))
+
+(def supported-sets
+  (mapv :code sets))
 
 (def modes
   #{"winston"})

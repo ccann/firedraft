@@ -4,9 +4,11 @@
             [firedraft.middleware :as middleware]
             [firedraft.routes.games :as games]
             [firedraft.routes.home :as home]
+            [firedraft.routes.packs :as packs]
             [firedraft.routes.ws :as ws]
             [mount.core :as mount]
             [reitit.ring :as ring]
+            [reitit.ring.coercion :as coercion]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.webjars :refer [wrap-webjars]]))
 
@@ -20,7 +22,9 @@
    (ring/router
     [(home/routes)
      (ws/routes)
-     (games/routes)])
+     (games/routes)
+     (packs/routes)]
+    {:data {:middleware [coercion/coerce-request-middleware]}})
    (ring/routes
     (ring/create-resource-handler
      {:path "/"})

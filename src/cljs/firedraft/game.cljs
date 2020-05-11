@@ -76,7 +76,7 @@
         (for [card cards]
           ^{:key (:sid card)}
           [:div.column.modal-column
-           {:class (when (<= 5 (count cards)) "is-one-fifth")}
+           {:class (when (<= 4 (count cards)) "is-one-quarter")}
            [:figure.image
             [:img.card.modal-card
              {:on-click #(zoom-card! game card)

@@ -8,6 +8,5 @@
   (http/ok (game/available-games)))
 
 (defn routes []
-  ["/games" {:middleware [;; middleware/wrap-csrf
-                          middleware/wrap-formats]}
+  ["/games" {:middleware [middleware/wrap-formats]}
    ["" {:get {:handler read-games}}]])
