@@ -57,6 +57,10 @@ img.card-back.pile-card {
     transition: transform .3s;
 }
 
+.pickable-by-me:hover {
+    transform: scale(1.05);
+}
+
 .card {
     border-color: rgb(23,20,15);
     border-width: 0.1px;
@@ -66,10 +70,6 @@ img.card-back.pile-card {
 
 .card-back {
     border-radius: 5.9%;
-}
-
-.pickable-by-me:hover {
-    transform: scale(1.05);
 }
 
 .zoom-view {

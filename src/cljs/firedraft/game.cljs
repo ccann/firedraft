@@ -151,13 +151,13 @@
         [:h4 (str "Pile " (inc index))]]]]
      [:div.pile
       [:figure.image
+       {:class (when (and pickable? (my-turn? @game)) "pickable-by-me")}
        (doall
         (for [n (range pile-count)]
           ^{:key n}
           [:img.card-back.pile-card
            {:class (dom/classes
                     (when pickable? "pickable")
-                    (when (and pickable? (my-turn? @game)) "pickable-by-me")
                     (when (zero? pile-count) "hidden"))
             :src "img/card-back-arena.jpg"
             :on-click #(when (and is-my-turn? pickable?)
