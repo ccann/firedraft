@@ -150,21 +150,16 @@
        [:div.content.count-label
         [:h4 (str "Pile " (inc index))]]]]
      [:div.pile
-      [:figure.image.is-3by4
+      [:figure.image
        (doall
         (for [n (range pile-count)]
           ^{:key n}
           [:img.card-back.pile-card
-           {:id (str "pile-" (inc index) "-" n)
-            :style #js {:position "absolute"
-                        :top (let [ht (some-> (str "pile-" (inc index) "-" (dec n))
-                                              (dom/elem)
-                                              (.-clientHeight))]
-                               (* n (* .06 (or ht 0))))}
-            :class (dom/classes (when pickable? "pickable")
-                                (when (my-turn? @game) "pickable-by-me")
-                                (when (zero? pile-count) "hidden"))
-            :src "img/card-back-arena.png"
+           {:class (dom/classes
+                    (when pickable? "pickable")
+                    (when (and pickable? (my-turn? @game)) "pickable-by-me")
+                    (when (zero? pile-count) "hidden"))
+            :src "img/card-back-arena.jpg"
             :on-click #(when (and is-my-turn? pickable?)
                          (open-picker!))}]))]]]))
 
@@ -181,10 +176,11 @@
        [:img.card-back.pile-card
         {:id "deck"
          :style #js {:position "absolute"}
-         :src "img/card-back-arena.png"
-         :class (dom/classes (when pickable? "pickable")
-                             (when (my-turn? @game) "pickable-by-me")
-                             (when (zero? (:deck-count @game)) "hidden"))
+         :src "img/card-back-arena.jpg"
+         :class (dom/classes
+                 (when pickable? "pickable")
+                 (when (and pickable? (my-turn? @game)) "pickable-by-me")
+                 (when (zero? (:deck-count @game)) "hidden"))
          :on-click #(when (and is-my-turn? pickable?)
                       (open-picker!))}]]]]))
 

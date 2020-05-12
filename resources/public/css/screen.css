@@ -40,15 +40,16 @@ body {
     margin-right: auto;
 }
 
-.pile-card {
+img.card-back.pile-card {
+    margin-bottom: -133%;
     margin-left: auto;
     margin-right: auto;
 }
 
 .pickable {
-    -webkit-box-shadow: 0px 0px 10px 10px rgba(102,255,167,0.75);
-    -moz-box-shadow: 0px 0px 10px 10px rgba(102,255,167,0.75);
-    box-shadow: 0px 0px 10px 10px rgba(102,255,167,0.75);
+    -webkit-box-shadow: 0px 0px 10px 10px rgba(136,189,188,0.75);
+    -moz-box-shadow: 0px 0px 10px 10px rgba(136,189,188,0.75);
+    box-shadow: 0px 0px 10px 10px rgba(136,189,188,0.75);
 }
 
 .pickable-by-me {
@@ -64,7 +65,7 @@ body {
 }
 
 .card-back {
-    border-radius: 5%;
+    border-radius: 5.9%;
 }
 
 .pickable-by-me:hover {
@@ -129,6 +130,7 @@ body {
 }
 
 .modal-buttons{
+    padding-top: 1em;
     padding-bottom: 2em;
 }
 
@@ -143,12 +145,11 @@ body {
 
 figure.image.pick {
     transition: transform .3s;
-    height: 34%;
 }
 
 figure.image.pick:hover {
     transform: scale(1.05);
-    z-index: 999;
+    z-index: 998;
     pointer-events: auto;
     cursor: pointer;
 }
@@ -173,6 +174,7 @@ img.card.pick.last-card {
 
 #app-title {
     padding-bottom: 0em;
+    padding-top: 1em;
 }
 
 .input, .select select, .textarea {
