@@ -7,6 +7,8 @@
             [firedraft.routes.packs :as packs]
             [firedraft.routes.ws :as ws]
             [mount.core :as mount]
+            firedraft.events.game
+            firedraft.events.games
             [reitit.ring :as ring]
             [reitit.ring.coercion :as coercion]
             [ring.middleware.content-type :refer [wrap-content-type]]

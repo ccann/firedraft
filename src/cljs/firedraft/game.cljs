@@ -129,19 +129,12 @@
              (doall
               (for [[j pick] (map vector (range) col-picks)]
                 ^{:key (str i j)}
-                [:figure.image
-                 (merge
-                  {:on-click #(zoom-card! game pick)}
-                  (if (= (inc j) (count col-picks))
-                    {:class "last-card-in-pick-col"
-                     :id (str "last-card-" i)}
-                    {:class "pick-fig"
-                     :style #js{:height (let [ht (some-> (str "last-card-" i)
-                                                         (dom/elem)
-                                                         (.-clientHeight))]
-                                          (* 0.1 (or ht 0)))}}))
+                [:figure.image.pick
+                 {:on-click #(zoom-card! game pick)}
                  [:img.card.pick
-                  {:src (img-uri (:sid pick))}]])))]))]]]))
+                  (merge {:src (img-uri (:sid pick))}
+                         (when (= (inc j) (count col-picks))
+                           {:class "last-card"}))]])))]))]]]))
 
 (defn- my-turn?
   [game]

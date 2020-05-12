@@ -57,6 +57,8 @@ body {
 }
 
 .card {
+    border-color: rgb(23,20,15);
+    border-width: 0.1px;
     border-radius: 5%;
     cursor: pointer;
 }
@@ -70,7 +72,7 @@ body {
 }
 
 .zoom-view {
-    max-width: 500px;
+    max-width: 400px;
     z-index: 999;
     width: 60%;
     margin-left: auto;
@@ -130,30 +132,35 @@ body {
     padding-bottom: 2em;
 }
 
-.pick-fig {
-    cursor: pointer;
-}
-
-.pick-fig:hover {
-    z-index: 999;
-}
-
-.last-card-in-pick-col {
-    cursor: pointer;
-    pointer-events: auto;
-}
-
-.pick {
-    pointer-events: none;
-}
-
 .picks-container {
     padding-top: 6em;
     padding-bottom: 20em;
 }
 
 .picks {
-    positionc: relative;
+    position: relative;
+}
+
+figure.image.pick {
+    transition: transform .3s;
+    height: 34%;
+}
+
+figure.image.pick:hover {
+    transform: scale(1.05);
+    z-index: 999;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+img.card.pick {
+    margin-bottom: -124%;
+    pointer-events: none;
+}
+
+img.card.pick.last-card {
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 .hidden {
@@ -166,4 +173,9 @@ body {
 
 #app-title {
     padding-bottom: 0em;
+}
+
+.input, .select select, .textarea {
+    background-color: rgb(52,60,61);
+    color: white;
 }
