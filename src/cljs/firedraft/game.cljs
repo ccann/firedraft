@@ -136,6 +136,31 @@
                          (when (= (inc j) (count col-picks))
                            {:class "last-card"}))]])))]))]]]))
 
+(defn sideboard [game]
+  (let [cards (:sideboard @game)]
+    [:div.tile.is-parent
+     [:div.tile.is-child.picks-container
+      [:div.content
+       [:h2 "Sideboard"]]
+      [:div.columns.is-mobile.picks.is-variable
+       (doall
+        (for [i (range 5)]
+          ^{:key i}
+          [:div.column.is-one-fifth
+           (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)
+                 col-picks (->> cards
+                                (filter #(op (inc i) (:cmc %)))
+                                (sort-by (juxt :col :name)))]
+             (doall
+              (for [[j pick] (map vector (range) col-picks)]
+                ^{:key (str i j)}
+                [:figure.image.pick
+                 {:on-click #(zoom-card! game pick)}
+                 [:img.card.pick
+                  (merge {:src (img-uri (:sid pick))}
+                         (when (= (inc j) (count col-picks))
+                           {:class "last-card"}))]])))]))]]]))
+
 (defn- my-turn?
   [game]
   (= (:player game) (get-in game [:players (:turn game)])))
@@ -247,7 +272,10 @@
               (for [line (str/split-lines (:pick-list @game))]
                 [:span line [:br]])]])
           (when drafting?
-            (picks game))]]
+            (picks game))
+          ;; (when drafting?
+          ;;   (sideboard game))
+          ]]
         #_[:footer.footer
            [:div.content.has-text-centered
             [:p "author: @ccann"]]]]])))
