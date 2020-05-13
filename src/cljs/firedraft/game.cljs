@@ -6,8 +6,12 @@
             [taoensso.timbre :as log]
             [clojure.string :as str]))
 
-(defn- start-game! [game]
-  (ws/send! [:game/start (:id @game)]))
+(defn- start-game!
+  [game]
+  (swap! game assoc :loading? true)
+  (ws/send! [:game/start (:id @game)]
+            2000
+            (fn callback [_] (swap! game assoc :loading? false))))
 
 (defn- img-uri
   [id & [version]]
@@ -223,6 +227,7 @@
   (r/with-let [game (r/cursor session [:game])]
     (let [drafting? (:started? @game)
           postdraft? (:over? @game)
+          loading? (:loading? @game)
           predraft? (and (not drafting?) (not (:over? @game)))]
       [:div dom/header
        [:div.section
@@ -230,35 +235,40 @@
          [:div.container.tile.is-vertical
           [:div.tile.is-parent
            (when predraft?
-             [:div.tile.is-child
-              [:div.content
-               [:div.tags.has-addons.are-medium
-                [:span.tag.is-dark "name"]
-                [:span.tag.is-primary (:name @game)]]
-               [:div.tags.has-addons.are-medium
-                [:span.tag.is-dark
-                 "mode"]
-                [:span.tag.is-primary
-                 (:mode @game)]
-                (when-let [subtype (case (keys (:opts @game))
-                                     [:booster] "booster")]
-                  [:span.tag.is-info subtype])]
-               [:h2 "Players"]
-               [:div
-                (for [[i id] (map vector (range) (:players @game))]
-                  ^{:key id}
-                  [:div.tags.has-addons.are-medium
-                   [:span.tag.is-dark (inc i)]
-                   [:span.tag.is-family-code.is-primary id]])]]
-              (case (count (:players @game))
-                2 [:button.button.is-link
-                   {:on-click #(start-game! game)}
-                   "Start Draft"]
-                1 [:div.content.is-size-4
-                   [:p "Waiting for a second player to join..."]]
-                [:div.content
-                 [:p.has-text-danger.is-size-4
-                  "This draft mode only supports 2 players!"]])])
+             [:div
+              [:div.tile.is-child
+               [:div.content
+                [:div.tags.has-addons.are-medium
+                 [:span.tag.is-dark "name"]
+                 [:span.tag.is-primary (:name @game)]]
+                [:div.tags.has-addons.are-medium
+                 [:span.tag.is-dark
+                  "mode"]
+                 [:span.tag.is-primary
+                  (:mode @game)]
+                 (when-let [subtype (case (keys (:opts @game))
+                                      [:booster] "booster")]
+                   [:span.tag.is-info subtype])]
+                [:h2 "Players"]
+                [:div
+                 (for [[i id] (map vector (range) (:players @game))]
+                   ^{:key id}
+                   [:div.tags.has-addons.are-medium
+                    [:span.tag.is-dark (inc i)]
+                    [:span.tag.is-family-code.is-primary id]])]]
+               (case (count (:players @game))
+                 2 (when-not loading?
+                     [:button.button.is-link
+                      {:on-click #(start-game! game)}
+                      "Start Draft"])
+                 1 [:div.content.is-size-4
+                    [:p "Waiting for a second player to join..."]]
+                 [:div.content
+                  [:p.has-text-danger.is-size-4
+                   "This draft mode only supports 2 players!"]])]
+              (when loading?
+                [:div.tile.is-child
+                 [:progress.progress.is-small.is-primary]])])
            (when drafting?
              [:div.tile.is-child
               [:div.content.has-text-centered
