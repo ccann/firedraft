@@ -17,9 +17,10 @@
        {:on-change #(swap! session assoc-in
                            [:game :opts :booster n]
                            (dom/target-value %))}
-       (for [set-code g/supported-sets]
-         ^{:key set-code}
-         [:option set-code])]]]))
+       (for [-set g/sets]
+         ^{:key -set}
+         [:option {:title (:name -set)}
+          (:code -set)])]]]))
 
 (def game-opt-defaults
   (let [sc (first g/supported-sets)]
