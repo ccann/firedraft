@@ -1,7 +1,6 @@
 (ns firedraft.lobby
   (:require [clojure.string :as str]
             [firedraft.common.dom :as dom]
-            [firedraft.common.page :as page]
             [firedraft.common.state :as state]
             [firedraft.ws :as ws]
             [taoensso.timbre :as log]
@@ -45,8 +44,7 @@
             5000
             (fn callback [data]
               (log/info :game-created (pr-str data))
-              (swap! session assoc :game data)
-              (page/nav! session :game))))
+              (swap! session assoc :game data))))
 
 (defn- set-draft-format!
   [this session]
@@ -84,9 +82,10 @@
 
       [:div.field
        [:div.control
-        [:button.button.is-primary
-         {:on-click #(create-game! session)}
-         "Create Draft"]]]]]))
+        [:a {:href "#/game"}
+         [:button.button.is-primary
+          {:on-click #(create-game! session)}
+          "Create Draft"]]]]]]))
 
 (defn open-rules-modal! [session fmt]
   (swap! session assoc :format fmt)
@@ -106,8 +105,7 @@
             (fn callback [data]
               (if (:error data)
                 (log/error [:game/join (:error data)])
-                (do (swap! session assoc :game data)
-                    (page/nav! session :game))))))
+                (swap! session assoc :game data)))))
 
 (defn rules-modal
   [session]
@@ -182,7 +180,8 @@
              [:td (if (:joinable? game)
                     [:div.field
                      [:div.control
-                      [:a {:on-click #(join-game! session (:id game))}
+                      [:a {:href "#/game"
+                           :on-click #(join-game! session (:id game))}
                        "Join Draft"]]]
                     "Full")]
              [:td (:name game)]

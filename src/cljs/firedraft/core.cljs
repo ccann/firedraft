@@ -14,11 +14,11 @@
   (:import goog.History))
 
 (def pages
-  {:lobby lobby/page
-   :game game/page})
+  {:lobby #'lobby/page
+   :game #'game/page})
 
 (defn page []
-  ((pages (:page @session)) session))
+  [(pages (:page @session)) session])
 
 
 ;; -------------------------
@@ -59,5 +59,6 @@
 (defn init! []
   (ws/start-router!)
   (fd.ajax/load-interceptors!)
+  (hook-browser-navigation!)
   (mount-components)
   (fetch-available-games! session))

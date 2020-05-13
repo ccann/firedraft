@@ -243,7 +243,7 @@
                  [:span.tag.is-primary (:name @game)]]
                 [:div.tags.has-addons.are-medium
                  [:span.tag.is-dark
-                  "mode"]
+                  "format"]
                  [:span.tag.is-primary
                   (:mode @game)]
                  (when-let [subtype (case (keys (:opts @game))
