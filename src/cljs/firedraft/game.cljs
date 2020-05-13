@@ -66,12 +66,34 @@
 (defn picker-modal
   [game]
   (let [[type ix :as picked] (:pickable @game)
-        cards (:cards @game)]
+        cards (:cards @game)
+        new-card (last cards)
+        cards (butlast cards)]
     [:div.modal {:id "picker"}
      [:div.modal-background {:on-click close-picker!}]
      [:div.modal-content.picker-modal
-      [:div.columns.is-centered.is-mobile.is-multiline
+      [:div.columns.is-centered.is-mobile
        {:id "picker-modal-columns"}
+       [:div.column.is-two-thirds
+        [:div.columns.is-centered.is-mobile.is-vcentered
+         [:figure.image
+          [:img.card.modal-card
+           {:on-click #(zoom-card! game new-card)
+            :style #js {:transformOrigin "center center"}
+            :src (img-uri (:sid new-card))}]]
+         [:div.column
+          [:div.buttons.are-medium.is-centered
+           [:button.button.is-success
+            {:on-click #(make-pick! game picked)}
+            "Take Cards"]
+           (when (and (= :pile type)    ; cannot pass on a pick from the deck
+                      (if (= ix 2)
+                        (< 0 (:deck-count @game))
+                        (< 0 (get-in @game [:piles-count (inc ix)]))))
+             [:button.button.is-danger
+              {:on-click #(pass-pick! game ix)}
+              "Pass Cards"])]]]]]
+      [:div.columns.is-centered.is-mobile.is-multiline
        (doall
         (for [card cards]
           ^{:key (:sid card)}
@@ -87,26 +109,7 @@
                  (= card (first cards)) "center left"
                  (= card (last cards)) "center right"
                  :else "center center")}
-              :src (img-uri (:sid card))}]]]))]
-
-      [:div.columns.is-centered
-       [:div.column.no-padding]
-       [:div.column
-        [:div.level
-         [:div.level-item
-          [:div.field.is-grouped.buttons.are-medium.modal-buttons
-           (when (and (= :pile type) ; cannot pass on a pick from the deck
-                      (if (= ix 2)
-                        (< 0 (:deck-count @game))
-                        (< 0 (get-in @game [:piles-count (inc ix)]))))
-             [:button.button.is-danger
-              {:on-click #(pass-pick! game ix)}
-              "Pass"])
-
-           [:button.button.is-success
-            {:on-click #(make-pick! game picked)}
-            "Pick"]]]]]
-       [:div.column.no-padding]]]
+              :src (img-uri (:sid card))}]]]))]]
      [:button.modal-close.is-large
       {:on-click close-picker!
        :aria-label "close"}]]))
