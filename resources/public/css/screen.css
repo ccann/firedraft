@@ -183,3 +183,16 @@ footer.footer {
 .main_content {
     flex: 1;
 }
+
+#app-explainer {
+    padding-top: 2em;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+
+.glowing-text {
+    text-shadow: 1px 1px 10px rgba(136,189,188,0.75), 1px 1px 10px #fff;
+}

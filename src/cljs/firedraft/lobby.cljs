@@ -31,7 +31,7 @@
   [s]
   (keyword (str/replace s #"\s+" "-")))
 
-(defn- set-game-type!
+(defn- set-draft-type!
   [this session]
   (swap! session assoc-in [:game :opts]
          (let [mode (get-in @session [:game :mode])
@@ -47,7 +47,7 @@
               (swap! session assoc :game data)
               (page/nav! session :game))))
 
-(defn- set-game-mode!
+(defn- set-draft-format!
   [this session]
   (swap! session assoc-in [:game :mode]
          (dom/target-value this)))
@@ -60,9 +60,9 @@
       [:div.content
        [:h3 "Create A Draft"]]
       [:div.field
-       [:label.label "Mode"]
+       [:label.label "Format"]
        [:div.control
-        {:on-change #(set-game-mode! % session)}
+        {:on-change #(set-draft-format! % session)}
         [:div.select
          [:select
           (for [mode g/modes] ^{:key mode} [:option mode])]]]]
@@ -72,19 +72,30 @@
          [:div.field
           [:label.label "Type"]
           [:div.control
-           {:on-change #(set-game-type! % session)}
+           {:on-change #(set-draft-type! % session)}
            [:div.select
             [:select
              [:option "booster"]]]]]
          (when (contains? (get-in @session [:game :opts]) :booster)
-           [:div.field.is-grouped
-            (pack-controls session)])])
+           [:div [:label.label "Sets"]
+            [:div.field.is-grouped
+             (pack-controls session)]])])
 
       [:div.field
        [:div.control
         [:button.button.is-primary
          {:on-click #(create-game! session)}
          "Create Draft"]]]]]))
+
+(defn open-rules-modal! [session fmt]
+  (swap! session assoc :format fmt)
+  (.add (.-classList (dom/elem "rules-modal"))
+        "is-active"))
+
+(defn close-rules-modal! []
+  (.remove (.-classList (dom/elem "rules-modal"))
+           "is-active"))
+
 
 (defn- join-game!
   [session game-id]
@@ -96,6 +107,56 @@
                 (log/error [:game/join (:error data)])
                 (do (swap! session assoc :game data)
                     (page/nav! session :game))))))
+
+(defn rules-modal
+  [session]
+  (let [close! #(do (swap! session dissoc :format)
+                    (close-rules-modal!))]
+    [:div.modal {:id "rules-modal"}
+     [:div.modal-background.has-background-black.clickable {:on-click close!}]
+     [:div.modal-content
+      (case (:format @session)
+        :winston
+        [:div.content
+         [:h2.title "Winston"]
+         [:ul
+          [:li [:p "6 boosters are shuffled together into one 90-card deck"]]
+          [:li [:p "The top 3 cards from the deck are placed face down next to it as 3 new piles of 1 card each."]]
+          [:li [:p "The first player looks at Pile 1. They may choose to draft that pile or not."]]
+          [:li [:p "If they draft it, that pile is replaced with a new face-down card from the top of the deck."]]
+          [:li [:p "If they don't draft it, they put it back and add a new card from the deck to Pile 1 and move on to Pile 2."]]
+          [:li [:p "They look at Pile 2 and decide to draft it or not, in the same way as Pile 1. If they do not draft Pile 2, move onto Pile 3."]]
+          [:li [:p "If they choose not to draft Pile 3, they must instead draft a card from the top of the deck."]]
+          [:li [:p "Continue until all 90 cards have been drafted. Construct 40-card decks and play."]]]
+         [:p [:a {:href "https://magic.wizards.com/en/articles/archive/winston-draft-2005-03-25"} "See More"]]]
+
+        :grid
+        [:div.content
+         [:h2.title "Grid"]
+         [:p [:a {:href "https://www.youtube.com/watch?v=yelf_BB6BgY"}
+              "See More"]]]
+
+        nil)]
+     [:button.modal-close.is-large
+      {:on-click close!
+       :aria-label "close"}]]))
+
+(defn section-explain-game
+  [session]
+  [:div.section.main_content
+   {:id "app-explainer"}
+   [:div.container
+    [:div.content
+     [:p.title "Firedraft is a new way for 2 players to draft online."]
+     [:p "Export your picks at the end of the draft and use them to play on MTGA."]
+     [:p.subtitle "Draft Format Rules:"]
+     [:ul
+      [:li
+       [:a {:on-click #(open-rules-modal! session :winston)}
+        "Winston"]]
+      [:li
+       [:a {:on-click #(open-rules-modal! session :grid)}
+        "Grid"]]]]]])
 
 (defn section-join-game
   [session]
@@ -109,7 +170,7 @@
          [:tr
           [:th "Status"]
           [:th "Name"]
-          [:th "Mode"]
+          [:th "Format"]
           [:th "Code"]]]
         [:tbody
          (doall
@@ -132,6 +193,8 @@
 (defn page [session]
   [:div.main
    dom/header
+   (rules-modal session)
+   (section-explain-game session)
    (section-create-game session)
    (section-join-game session)
    dom/footer])

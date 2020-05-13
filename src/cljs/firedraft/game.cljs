@@ -36,6 +36,7 @@
 
 (defn make-pick! [game picked]
   (log/info :send [:game/pick])
+  (swap! game dissoc :cards)
   (ws/send! [:game/pick {:game-id (:id @game)
                          :picked picked}]
             1000
@@ -44,6 +45,7 @@
   (close-picker!))
 
 (defn pass-pick! [game ix]
+  (swap! game dissoc :cards)
   (ws/send! [:game/pass {:game-id (:id @game)
                          :pile-ix ix}])
   (close-picker!))
@@ -260,9 +262,16 @@
            (when drafting?
              [:div.tile.is-child
               [:div.content.has-text-centered
-               [:h2 (if (my-turn? @game)
-                      "Your Turn"
-                      "Oppo's Turn")]]])]
+               [:h2
+                (if (my-turn? @game)
+                  [:span.glowing-text "Your Turn"]
+                  (let [[tp ix] (:pickable @game)]
+                    (case tp
+                      :pile (case ix
+                              0 "Opponent's Turn"
+                              1 "Opponent passed Pile 1"
+                              2 "Opponent passed Pile 2")
+                      :deck "Opponent passed Pile 3")))]]])]
           (picker-modal game)
           (zoom-view-modal game)
           [:div.tile.is-parent
