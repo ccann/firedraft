@@ -1,7 +1,12 @@
 html,
 body {
-  font-family: 'Quicksand', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Quicksand', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
+
+html {
+    overflow-y: auto;
+}
+
 
 .pile {
     position: relative;
@@ -39,7 +44,11 @@ img.card-back.pile-card {
 }
 
 .card-back {
-    border-radius: 5.9%;
+    border-radius: 5%;
+    border-width: 0px;
+    border-color: rgb(23,20,15);
+    height: 100%;
+    width: 100%;
 }
 
 .zoom-view {
@@ -106,7 +115,11 @@ img.card-back.pile-card {
 
 .picks-container {
     padding-top: 6em;
-    padding-bottom: 20em;
+    padding-bottom: 28%;
+}
+
+.sideboard-container {
+    padding-bottom: 28%;
 }
 
 .picks {
@@ -150,4 +163,23 @@ img.card.pick.last-card {
 .input, .select select, .textarea {
     background-color: rgb(52,60,61);
     color: white;
+}
+
+body > footer {
+    margin-top: auto;
+}
+
+footer.footer {
+    padding-bottom: 2em;
+    padding-top: 2em;
+}
+
+.main {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+}
+
+.main_content {
+    flex: 1;
 }

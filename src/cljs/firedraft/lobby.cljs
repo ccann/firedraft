@@ -55,7 +55,7 @@
 (defn section-create-game
   [session]
   (let [winston? (= "winston" (get-in @session [:game :mode]))]
-    [:div.section
+    [:div.section.main_content
      [:div.container
       [:div.content
        [:h3 "Create A Draft"]]
@@ -65,9 +65,7 @@
         {:on-change #(set-game-mode! % session)}
         [:div.select
          [:select
-          (for [mode g/modes]
-            ^{:key mode}
-            [:option mode])]]]]
+          (for [mode g/modes] ^{:key mode} [:option mode])]]]]
 
       (when winston?
         [:div.field
@@ -101,7 +99,7 @@
 
 (defn section-join-game
   [session]
-  [:div.section
+  [:div.section.main_content
    [:div.container
     [:div.content
      [:h3 "Drafts"]
@@ -132,10 +130,11 @@
        [:p "No drafts avaiable. How about creating one?"])]]])
 
 (defn page [session]
-  [:div
-   (dom/header)
+  [:div.main
+   dom/header
    (section-create-game session)
-   (section-join-game session)])
+   (section-join-game session)
+   dom/footer])
 
 (defmethod ws/handle-message :game/joined
   [{:keys [message]}]

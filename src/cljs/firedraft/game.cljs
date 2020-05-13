@@ -52,6 +52,12 @@
   (swap! game assoc :zoom-view card)
   (open-zoom-view!))
 
+(defn move-to-sideboard! [game card]
+  (swap! game update :sideboard conj card))
+
+(defn remove-from-sideboard! [game card]
+  (swap! game update :sideboard #(remove #{card} %)))
+
 (defn zoom-view-modal
   [game-atom]
   (let [close! #(do (swap! game-atom dissoc :zoom-view)
@@ -62,6 +68,7 @@
       [:figure.image.zoom-view
        [:img.card
         {:src (img-uri (:sid (:zoom-view @game-atom)))}]]]]))
+
 
 (defn picker-modal
   [game]
@@ -112,7 +119,8 @@
        :aria-label "close"}]]))
 
 (defn picks [game]
-  (let [picks (:picks @game)]
+  (let [picks (->> (:picks @game)
+                   (remove (set (:sideboard @game))))]
     [:div.tile.is-parent
      [:div.tile.is-child.picks-container
       [:div.content
@@ -128,18 +136,18 @@
                                 (sort-by (juxt :col :name)))]
              (doall
               (for [[j pick] (map vector (range) col-picks)]
-                ^{:key (str i j)}
+                ^{:key [i j]}
                 [:figure.image.pick
-                 {:on-click #(zoom-card! game pick)}
+                 {:on-click #(move-to-sideboard! game pick)}
                  [:img.card.pick
                   (merge {:src (img-uri (:sid pick))}
                          (when (= (inc j) (count col-picks))
                            {:class "last-card"}))]])))]))]]]))
 
 (defn sideboard [game]
-  (let [cards (:sideboard @game)]
+  (let [board (:sideboard @game)]
     [:div.tile.is-parent
-     [:div.tile.is-child.picks-container
+     [:div.tile.is-child.sideboard-container
       [:div.content
        [:h2 "Sideboard"]]
       [:div.columns.is-mobile.picks.is-variable
@@ -148,14 +156,14 @@
           ^{:key i}
           [:div.column.is-one-fifth
            (let [op (case (inc i) 1 >= (2 3 4) = 5 <=)
-                 col-picks (->> cards
+                 col-picks (->> board
                                 (filter #(op (inc i) (:cmc %)))
                                 (sort-by (juxt :col :name)))]
              (doall
               (for [[j pick] (map vector (range) col-picks)]
-                ^{:key (str i j)}
+                ^{:key [i j]}
                 [:figure.image.pick
-                 {:on-click #(zoom-card! game pick)}
+                 {:on-click #(remove-from-sideboard! game pick)}
                  [:img.card.pick
                   (merge {:src (img-uri (:sid pick))}
                          (when (= (inc j) (count col-picks))
@@ -184,7 +192,7 @@
            {:class (dom/classes
                     (when pickable? "pickable")
                     (when (zero? pile-count) "hidden"))
-            :src "img/card-back-arena.jpg"
+            :src "img/card-back.jpg"
             :on-click #(when (and is-my-turn? pickable?)
                          (open-picker!))}]))]]]))
 
@@ -201,7 +209,7 @@
        [:img.card-back.pile-card
         {:id "deck"
          :style #js {:position "absolute"}
-         :src "img/card-back-arena.jpg"
+         :src "img/card-back.jpg"
          :class (dom/classes
                  (when pickable? "pickable")
                  (when (and pickable? (my-turn? @game)) "pickable-by-me")
@@ -214,7 +222,7 @@
     (let [drafting? (:started? @game)
           postdraft? (:over? @game)
           predraft? (and (not drafting?) (not (:over? @game)))]
-      [:div (dom/header)
+      [:div dom/header
        [:div.section
         [:div.tile.is-ancestor
          [:div.container.tile.is-vertical
@@ -273,12 +281,10 @@
                 [:span line [:br]])]])
           (when drafting?
             (picks game))
-          ;; (when drafting?
-          ;;   (sideboard game))
-          ]]
-        #_[:footer.footer
-           [:div.content.has-text-centered
-            [:p "author: @ccann"]]]]])))
+          (when drafting?
+            (sideboard game))]]]
+       (when drafting?
+         dom/footer)])))
 
 ;; handle stepping through the game state
 ;; whose turn it is may or may not change
