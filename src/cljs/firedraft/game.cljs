@@ -74,7 +74,7 @@
        {:id "picker-modal-columns"}
        (doall
         (for [card cards]
-          ^{:key (:sid card)}
+          ^{:key (:uid card)}
           [:div.column.modal-column
            {:class (when (<= 4 (count cards)) "is-one-quarter")}
            [:figure.image

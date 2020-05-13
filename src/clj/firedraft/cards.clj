@@ -6,7 +6,8 @@
             [firedraft.game.util :as g]
             [firedraft.packs :as packs]
             [jsonista.core :as json]
-            [medley.core :refer [find-first]]))
+            [medley.core :refer [find-first]])
+  (:import java.util.UUID))
 
 (def json-mapper
   (json/object-mapper
@@ -139,6 +140,7 @@
                       (mapv (fn [card] {:sid (:scryfall-id card)
                                         :name (:name card)
                                         :col (:colors card)
+                                        :uid (str (UUID/randomUUID))
                                         :cmc (int (:converted-mana-cost card))}))))
 
           :else nil)))
