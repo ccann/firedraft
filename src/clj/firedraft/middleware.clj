@@ -6,7 +6,8 @@
             [muuntaja.middleware :refer [wrap-format wrap-params]]
             [ring-ttl-session.core :refer [ttl-memory-store]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
-            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]))
+            [ring.middleware.defaults :refer [wrap-defaults
+                                              secure-site-defaults]]))
 
 (defn wrap-internal-error [handler]
   (fn [req]
@@ -37,7 +38,7 @@
 (defn wrap-base [handler]
   (-> ((:middleware defaults) handler)
       (wrap-defaults
-        (-> site-defaults
+        (-> secure-site-defaults
             (assoc-in [:security :anti-forgery] false)
             (assoc-in  [:session :store] (ttl-memory-store (* 60 30)))))
       wrap-internal-error))

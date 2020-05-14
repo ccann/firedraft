@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-echo "Building Uberjar"
-lein do clean, uberjar
-
 echo "Deploying to AppEngine"
-gcloud app deploy --quiet
 gcloud config set project "firedraft"
+gcloud app deploy --quiet
