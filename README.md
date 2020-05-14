@@ -1,7 +1,7 @@
-# 🔥 Firedraft
+# Draftwith.me
 
-Firedraft (codename) is a realtime web application for 2-player Magic: The
-Gathering draft formats written in Clojure and ClojureScript.
+Draftwith.me is a realtime web application for 2-player Magic: The Gathering draft
+formats written in Clojure and ClojureScript.
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ Visit http://localhost:3000 and your changes will be automatically recompiled an
 
 ## Libraries
 
-Firedraft was created with the Clojure web framework [Luminus](https://luminusweb.com/docs/guestbook), which is really just a collection of libraries. I generated the project via: `lein new luminus firedraft +reagent +site +http-kit`.
+This project was created with the Clojure web framework [Luminus](https://luminusweb.com/docs/guestbook), which is really just a collection of libraries. I generated the project via: `lein new luminus draftwithme +reagent +site +http-kit`.
 
 Beyond the standard libraries chosen and pulled in by Luminus, these are the libraries I added / chose:
 

@@ -21,13 +21,13 @@
    [:div.container
     [:div.content
      [:h1.title
-      (str fire-emoji " Firedraft")]]]])
+      "Draftwith.me"]]]])
 
 (def footer
   [:footer.footer
    [:div.content.has-text-centered
     [:p "author: " [:span.is-family-code "@ccann"]]
-    [:p "Firedraft is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC."]]])
+    [:p "Draftwith.me is unofficial Fan Content permitted under the Fan Content Policy. Not approved/endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC."]]])
 
 (defn classes [& strs]
   (str/join " " strs))
