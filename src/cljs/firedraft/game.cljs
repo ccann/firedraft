@@ -9,9 +9,7 @@
 (defn- start-game!
   [game]
   (swap! game assoc :loading? true)
-  (ws/send! [:game/start (:id @game)]
-            2000
-            (fn callback [_] (swap! game assoc :loading? false))))
+  (ws/send! [:game/start (:id @game)]))
 
 (defn- img-uri
   [id & [version]]
@@ -310,7 +308,10 @@
 (defmethod ws/handle-message :game/step
   [{:keys [message]}]
   (log/info :handle :game/step)
-  (swap! state/session update :game #(merge % (assoc message :started? true))))
+  (swap! state/session update :game
+         #(-> (merge % message)
+              (assoc :loading? false
+                     :started? true))))
 
 (defmethod ws/handle-message :game/cards
   [{:keys [message]}]

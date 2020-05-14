@@ -146,7 +146,7 @@
    {:id "app-explainer"}
    [:div.container
     [:div.content
-     [:p.title "Draftwith.me is a new way for 2 players to draft online."]
+     [:p.title "A new way for 2 players to draft online."]
      [:p "Export your picks at the end of the draft and use them to play on MTGA."]
      [:p.subtitle "Draft Format Rules:"]
      [:ul
