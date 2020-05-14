@@ -153,7 +153,7 @@
       [:li
        [:a {:on-click #(open-rules-modal! session :winston)}
         "Winston"]]
-      [:li
+      #_[:li
        [:a {:on-click #(open-rules-modal! session :grid)}
         "Grid"]]]]]])
 
