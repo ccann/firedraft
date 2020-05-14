@@ -1,11 +1,5 @@
 runtime: custom
 env: flex
-
-# handlers:
-# - url: .*
-#   secure: always
-#   script: auto
-
 instance_class: F1
 automatic_scaling:
   max_num_instances: 1

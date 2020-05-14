@@ -1,13 +1,15 @@
 (ns firedraft.middleware
   (:require [clojure.tools.logging :as log]
+            [firedraft.config :refer [env]]
             [firedraft.env :refer [defaults]]
             [firedraft.layout :refer [error-page]]
             [firedraft.middleware.formats :as formats]
             [muuntaja.middleware :refer [wrap-format wrap-params]]
             [ring-ttl-session.core :refer [ttl-memory-store]]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
-            [ring.middleware.defaults :refer [wrap-defaults
-                                              secure-site-defaults]]))
+            [ring.middleware.defaults
+             :refer
+             [secure-site-defaults site-defaults wrap-defaults]]))
 
 (defn wrap-internal-error [handler]
   (fn [req]
@@ -38,7 +40,9 @@
 (defn wrap-base [handler]
   (-> ((:middleware defaults) handler)
       (wrap-defaults
-        (-> secure-site-defaults
-            (assoc-in [:security :anti-forgery] false)
-            (assoc-in  [:session :store] (ttl-memory-store (* 60 30)))))
+       (-> (if (env :dev)
+             site-defaults
+             (assoc secure-site-defaults :proxy true))
+           (assoc-in [:security :anti-forgery] false)
+           (assoc-in  [:session :store] (ttl-memory-store (* 60 30)))))
       wrap-internal-error))
