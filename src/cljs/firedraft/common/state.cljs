@@ -16,10 +16,12 @@
   (with-out-str
     (ddiff/pretty-print (ddiff/diff g1 g2) printer)))
 
-(add-watch session :session
-           (fn [_ _ old new]
-             (let [g1 (:game old)
-                   g2 (:game new)]
-               (when-not (= g1 g2)
-                 (log/info :session/game "\n"
-                           (diff-games g1 g2))))))
+
+;; unfortunately this causes the browser to crash on occasion.
+;; (add-watch session :session
+;;            (fn [_ _ old new]
+;;              (let [g1 (:game old)
+;;                    g2 (:game new)]
+;;                (when-not (= g1 g2)
+;;                  (log/info :session/game "\n"
+;;                            (diff-games g1 g2))))))

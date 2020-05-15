@@ -96,7 +96,6 @@
   (.remove (.-classList (dom/elem "rules-modal"))
            "is-active"))
 
-
 (defn- join-game!
   [session game-id]
   (log/info "join game:" game-id)

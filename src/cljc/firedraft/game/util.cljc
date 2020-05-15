@@ -1,6 +1,7 @@
 (ns firedraft.game.util
-  (:require [firedraft.creature-types :as ct]
-            [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [firedraft.creature-types :as ct]
+            [medley.core :refer [find-first]]))
 
 (def sets
   [{:code "IKO"
@@ -52,6 +53,33 @@
 (defn whose-turn
   [game]
   (get-in game [:players (:turn game)]))
+
+(defn increment-turn
+  [game]
+  (let [game (update game :turn-number #(if % (inc %) 0))]
+    (assoc game :turn (mod (:turn-number game)
+                           (:max-players game)))))
+
+(defn get-next-player
+  [game]
+  (whose-turn (increment-turn game)))
+
+(defn joinable?
+  [game]
+  (< 0 (->> (:players game)
+            (remove nil?)
+            (count))
+     (:max-players game)))
+
+(defn in-progress?
+  [game]
+  (boolean (:turn-number game)))
+
+(defn active-players
+  [game]
+  (println (:players game))
+  (println (vec (remove nil? (:players game))))
+  (vec (remove nil? (:players game)))  )
 
 (def game-defaults
   {"winston" {:mode "winston"

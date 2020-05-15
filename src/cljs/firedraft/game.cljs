@@ -4,7 +4,8 @@
             [firedraft.common.state :as state]
             [firedraft.common.dom :as dom]
             [taoensso.timbre :as log]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [firedraft.game.util :as g]))
 
 (defn- start-game!
   [game]
@@ -173,12 +174,8 @@
                          (when (= (inc j) (count col-picks))
                            {:class "last-card"}))]])))]))]]]))
 
-(defn- my-turn?
-  [game]
-  (= (:player game) (get-in game [:players (:turn game)])))
-
 (defn- pile [game index]
-  (let [is-my-turn? (my-turn? @game)
+  (let [my-turn? (:my-turn? @game)
         pickable? (= [:pile index] (:pickable @game))
         pile-count (nth (:piles-count @game) index)]
     [:div.column.is-one-quarter.pile-column
@@ -188,7 +185,7 @@
         [:h4 (str "Pile " (inc index))]]]]
      [:div.pile
       [:figure.image
-       {:class (when (and pickable? (my-turn? @game)) "pickable-by-me")}
+       {:class (when (and pickable? my-turn?) "pickable-by-me")}
        (doall
         (for [n (range pile-count)]
           ^{:key n}
@@ -197,11 +194,11 @@
                     (when pickable? "pickable")
                     (when (zero? pile-count) "hidden"))
             :src "img/card-back.jpg"
-            :on-click #(when (and is-my-turn? pickable?)
+            :on-click #(when (and my-turn? pickable?)
                          (open-picker!))}]))]]]))
 
 (defn- deck [game]
-  (let [is-my-turn? (my-turn? @game)
+  (let [my-turn? (:my-turn? @game)
         pickable? (= [:deck 0] (:pickable @game))]
     [:div.column.is-one-quarter
      [:div.level
@@ -216,17 +213,17 @@
          :src "img/card-back.jpg"
          :class (dom/classes
                  (when pickable? "pickable")
-                 (when (and pickable? (my-turn? @game)) "pickable-by-me")
+                 (when (and pickable? my-turn?) "pickable-by-me")
                  (when (zero? (:deck-count @game)) "hidden"))
-         :on-click #(when (and is-my-turn? pickable?)
+         :on-click #(when (and my-turn? pickable?)
                       (open-picker!))}]]]]))
 
 (defn page [session]
   (r/with-let [game (r/cursor session [:game])]
-    (let [drafting? (:started? @game)
-          postdraft? (:over? @game)
+    (let [postdraft? (:over? @game)
+          drafting? (and (not postdraft?) (g/in-progress? @game))
           loading? (:loading? @game)
-          predraft? (and (not drafting?) (not (:over? @game)))]
+          predraft? (not drafting?)]
       [:div dom/header
        [:div.section
         [:div.tile.is-ancestor
@@ -245,16 +242,17 @@
                  [:span.tag.is-primary
                   (:mode @game)]
                  (when-let [subtype (case (keys (:opts @game))
-                                      [:booster] "booster")]
+                                      [:booster] "booster"
+                                      nil)]
                    [:span.tag.is-info subtype])]
                 [:h2 "Players"]
                 [:div
-                 (for [[i id] (map vector (range) (:players @game))]
+                 (for [[i id] (map vector (range) (g/active-players @game))]
                    ^{:key id}
                    [:div.tags.has-addons.are-medium
                     [:span.tag.is-dark (inc i)]
                     [:span.tag.is-family-code.is-primary id]])]]
-               (case (count (:players @game))
+               (case (count (g/active-players @game))
                  2 (when-not loading?
                      [:button.button.is-link
                       {:on-click #(start-game! game)}
@@ -271,7 +269,7 @@
              [:div.tile.is-child
               [:div.content.has-text-centered
                [:h2
-                (if (my-turn? @game)
+                (if (:my-turn? @game)
                   [:span.glowing-text "Your Turn"]
                   (let [[tp ix] (:pickable @game)]
                     (case tp
@@ -310,8 +308,7 @@
   (log/info :handle :game/step)
   (swap! state/session update :game
          #(-> (merge % message)
-              (assoc :loading? false
-                     :started? true))))
+              (assoc :loading? false))))
 
 (defmethod ws/handle-message :game/cards
   [{:keys [message]}]
@@ -324,7 +321,6 @@
   [{:keys [message]}]
   (log/info :handle :game/end)
   (swap! state/session assoc-in [:game :pick-list] message)
-  (swap! state/session assoc-in [:game :started?] false)
   (swap! state/session assoc-in [:game :over?] true))
 
 (defmethod ws/handle-message :game/update-players

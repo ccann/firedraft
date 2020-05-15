@@ -2,23 +2,30 @@
   (:require [clojure.tools.logging :as log]
             [firedraft.events.game :as game :refer [*games]]
             [firedraft.routes.ws :as ws]
-            [medley.core :refer [find-first]]
+            [medley.core :refer [dissoc-in filter-vals]]
             [mount.core :refer [defstate]]))
 
 (defn- update-players!
   [games dropped-uid]
-  (if-let [game-entry (find-first #(contains? (set (:players (val %)))
-                                              dropped-uid)
-                                  games)]
-    (let [game (update (val game-entry) :players #(vec (remove #{dropped-uid} %)))
-          [uid :as players] (:players game)]
-      (if uid
+  (if-let [game (some->> games
+                         (filter-vals #((set (:players %)) dropped-uid))
+                         first
+                         val)]
+    (let [ix (.indexOf (:players game) dropped-uid)
+          picks (get-in game [:picks dropped-uid])
+          {:keys [players id] :as game}
+          (-> game
+              (update :players assoc ix nil)
+              (assoc-in [:picks nil] picks)
+              (dissoc-in [:picks dropped-uid]))]
+      (if-let [?remaining-players (seq (remove nil? players))]
         (do
-          ;; update the remaining player's game
-          (ws/send! uid [:game/update-players players])
-          (assoc games (:id game) game))
+          ;; update the remaining players' clients
+          (doseq [uid ?remaining-players]
+            (ws/send! uid [:game/update-players players]))
+          (assoc games id game))
         ;; there are no players remaining, remove the game
-        (dissoc games (:id game))))
+        (dissoc games id)))
     games))
 
 (defn- drop-player!
