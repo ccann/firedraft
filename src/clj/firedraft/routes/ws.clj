@@ -52,12 +52,20 @@
   "Non-blocking event handler for Sente event messages"
   [msg]
   ;; Handle event-msgs on a single thread
-  (handle-event msg)
-  ;; (future (handle-event msg)) ; Handle event-msgs on a thread pool
-  )
+  (handle-event msg))
+
+
+;; performance note: since your `event-msg-handler` fn will be executed
+;; within a simple go block, you'll want this fn to be ~non-blocking
+;; (you'll especially want to avoid blocking IO) to avoid starving the
+;; core.async thread pool under load. To avoid blocking, you can use futures,
+;; agents, core.async, etc. as appropriate.
+;; Or for simple automatic future-based threading of every request, enable
+;; the `:simple-auto-threading?` opt (disabled by default).
 
 (defstate chsk-router
-  :start (sente/start-chsk-router! ch-chsk event-handler)
+  :start (sente/start-chsk-router! ch-chsk event-handler
+                                   {:simple-auto-threading? true})
   :stop (chsk-router))
 
 (defn routes []
