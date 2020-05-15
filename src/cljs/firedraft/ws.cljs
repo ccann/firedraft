@@ -7,7 +7,7 @@
 (let [{:keys [chsk ch-recv send-fn state]}
       ;; assigns a client ID to this browser tab
       (sente/make-channel-socket! "/ws"
-                                  ;; ?csrf-token
+                                  js/csrfToken
                                   {:type :auto})]
   (def chsk chsk)
   ;; receive channel

@@ -77,8 +77,6 @@
 
 (defn active-players
   [game]
-  (println (:players game))
-  (println (vec (remove nil? (:players game))))
   (vec (remove nil? (:players game)))  )
 
 (def game-defaults
