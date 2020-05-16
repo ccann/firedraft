@@ -1,134 +1,89 @@
 (ns firedraft.cards
-  (:require [camel-snake-kebab.core :as case]
-            [camel-snake-kebab.extras :as casex]
-            [clj-http.client :as client]
+  (:require [clj-http.client :as client]
+            [clojure.java.io :as io]
             [clojure.string :as str]
+            [firedraft.common :as com]
             [firedraft.game.util :as g]
             [firedraft.packs :as packs]
             [jsonista.core :as json]
-            [medley.core :refer [find-first]])
+            [mount.core :refer [defstate]])
   (:import java.util.UUID))
-
-(def json-mapper
-  (json/object-mapper
-   {:decode-key-fn keyword}))
-
-(defn json-decode [decodable]
-  (json/read-value decodable json-mapper))
-
-(defn kebab-case-keys
-  [m]
-  (casex/transform-keys case/->kebab-case-keyword m))
-
-(def *sets-cache
-  (atom nil))
-
-(defn- format-set
-  [m]
-  (-> (kebab-case-keys m)
-      (select-keys [:set-type
-                    :released-at
-                    :id
-                    :code
-                    :digital
-                    :name
-                    :icon-svg-uri])
-      (update :code #(some-> % str/upper-case))))
-
-(defn get-sets []
-  (or (seq @*sets-cache)
-      (let [resp (client/get "https://api.scryfall.com/sets")]
-        (if (= 200 (:status resp))
-          (let [sets (-> resp
-                         (get :body)
-                         (json-decode)
-                         (get :data))
-                sets (->> sets
-                          (filter #((set g/supported-set-types)
-                                    (get % :set_type)))
-                          (filter #((set g/supported-sets)
-                                    (str/upper-case (get % :code))))
-                          (map format-set))]
-            (reset! *sets-cache sets))
-          (throw (ex-info "failed to fetch sets from Scryfall"
-                          {:response resp}))))))
-
-(def *cards-by-set-cache
-  (atom {}))
-
-(defn- format-card
-  [m set-code]
-  (-> (kebab-case-keys m)
-      (select-keys [:name
-                    :scryfall-id
-                    :type
-                    :converted-mana-cost
-                    :number
-                    :colors
-                    :rarity])
-      (assoc :set set-code)))
 
 (defn- ->Int
   [s]
   ;; some numbers are not parsable e.g. "206†" for the misprint of Corpse Knight
-  (try (Integer/parseInt (:number s))
+  (try (Integer/parseInt s)
        (catch NumberFormatException _ 10000)))
+
+(defstate set->cards
+  :start (com/load-edn (io/resource "set-index.edn")))
+
+(defstate card-index
+  :start (com/load-edn (io/resource "card-index.edn")))
+
+(defstate set-list
+  :start (com/load-edn (io/resource "set-list.edn")))
 
 (defn get-cards-by-set
   [set-code]
-  (let [set-code (str/upper-case set-code)]
-    (or (get @*cards-by-set-cache set-code)
-        (let [resp (client/get (str "https://www.mtgjson.com/json/" set-code ".json"))]
-          (if (= 200 (:status resp))
-            (let [cards (->> (:body resp)
-                             (json-decode)
-                             (:cards)
-                             (map #(format-card % set-code))
-                             (filter #(<= (->Int %) (get g/set-numbers set-code))))]
-              (swap! *cards-by-set-cache assoc set-code cards)
-              cards)
-            (throw (ex-info "failed to fetch set cards from MTGJson"
-                            {:set set-code
-                             :response resp})))))))
+  (->> (get set->cards (keyword set-code))
+       (filter #(<= (:number %) (get g/set-numbers (name set-code))))))
 
-(def *card-cache
-  (atom nil))
+(defn get-set
+  [set-code]
+  (get set-list (keyword set-code)))
+
+(defn set-type
+  [{:keys [type]}]
+  (case type
+    ("expansion" "core" "commander" "draft_innovation") 4
+    ("masters" "starter") 3
+    "dual_deck" 2
+    1))
 
 (defn get-card
-  ([card-name]
-   (get-card card-name nil))
-  ([card-name set-code]
-   (when (empty? @*card-cache)
-     (let [set-codes (map :code (get-sets))]
-       (reset! *card-cache
-               (->> (mapcat get-cards-by-set set-codes)
-                    (group-by :name)))))
-   (let [printings (get @*card-cache card-name)]
-     (cond
-       (map? printings) printings
-       set-code         (find-first #(= set-code (:set-code %)) printings)
-       ;; take an arbitrary printing
-       :else            (first printings)))))
+  [card-name]
+  (get card-index card-name))
 
-;; (io/copy (:body (client/get "https://api.scryfall.com/cards/2ba18114-af6c-48cd-82c9-eb6541d566bf"
-;;                             {:as :byte-array
-;;                              :query-params {:format "image"
-;;                                             :version "png"}}))
-;;       (io/file "temp.png"))
+#_((fn [card-sets]
+     (let [sets (->> (map get-set (keys card-sets))
+                     (sort-by (juxt set-type :release-date))
+                     (reverse))
+           this-set (keyword (:code (first sets)))]
+       (def cody sets)
+       (-> (get card-sets this-set)
+           (assoc :set this-set))))
+   (get-card "Kiora, Behemoth Beckoner"))
 
-;; (map get-card
-;;      (-> (slurp "/Users/cody/Downloads/TheCube.txt")
-;;          (str/split-lines)))
+(defn import-cubecobra
+  [cube-id]
+  (let [resp (client/get (str "https://cubecobra.com/cube/download/plaintext/"
+                              cube-id))]
+    (->> (:body resp)
+         (str/split-lines)
+         (map get-card)
+         (map (fn [card-sets]
+                (let [sets (->> (map get-set (keys card-sets))
+                                (sort-by (juxt set-type :release-date))
+                                (reverse))
+                      this-set (keyword (:code (first sets)))]
+                  (-> (get card-sets this-set)
+                      (assoc :set this-set))))))))
 
-;; (reset! *card-cache {})
-#_(def x (get-card "Fire Prophecy"))
-
+(defn format-card
+  [card]
+  {:sid (:scryfall-id card)
+   :name (:name card)
+   :col (:colors card)
+   :uid (str (UUID/randomUUID))
+   :cmc (int (or (:converted-mana-cost card) 0))})
 
 (defmulti add-deck :mode)
 
 (defmethod add-deck "winston"
   [game]
-  (let [boosters (get-in game [:opts :booster])]
+  (let [boosters (get-in game [:opts :booster])
+        cube-id (get-in game [:opts :cube])]
     (cond boosters
           (assoc game :deck
                  (->> boosters
@@ -137,21 +92,76 @@
                                   (packs/create-booster
                                    {:cards cards
                                     :set-code set-code}))))
-                      (mapv (fn [card] {:sid (:scryfall-id card)
-                                        :name (:name card)
-                                        :col (:colors card)
-                                        :uid (str (UUID/randomUUID))
-                                        :cmc (int (:converted-mana-cost card))}))))
-
+                      (mapv format-card)
+                      (shuffle)))
+          cube-id
+          (assoc game :deck
+                 (->> (import-cubecobra cube-id)
+                      (shuffle)
+                      (take 90)
+                      (mapv format-card)))
           :else nil)))
 
-(defn shuffle-deck [game]
-  (update game :deck shuffle))
+;;; -----------------------------------------
+;;; REPL functions for generating index files
+;;;
 
+(def card-fields
+  ["rarity"
+   "scryfallId"
+   "convertedManaCost"
+   "type"
+   "name"
+   "number"
+   "colors"])
 
-;; (defn import-cubecobra
-;;   [cube-id]
+(defn- generate-card-index
+  [path]
+  (reduce (fn [card-ix [set-code m]]
+            (let [cards (get m "cards")]
+              (reduce (fn [-card-ix card]
+                        (let [card-name (get card "name")]
+                          (assoc-in -card-ix [card-name (keyword set-code)]
+                                    (-> (select-keys card card-fields)
+                                        (update "number" ->Int)
+                                        (com/kebab-case-keys)))))
+                      card-ix
+                      cards)))
+          {}
+          (->> (slurp path)
+               (json/read-value))))
 
-;;   )
+(defn- generate-set-index
+  [path]
+  (reduce (fn [set-ix [set-code m]]
+            (let [cards (get m "cards")]
+              (assoc set-ix (keyword set-code)
+                     (map (fn [card]
+                            (-> (select-keys card card-fields)
+                                (update "number" ->Int)
+                                (com/kebab-case-keys)))
+                          cards))))
+          {}
+          (->> (slurp path)
+               (json/read-value))))
 
-;; https://cubecobra.com/cube/download/plaintext/5e23dbeae9af4f4f4afd7bb1
+(defn- generate-set-list
+  [path]
+  (reduce (fn [set-meta -set]
+            (assoc set-meta (keyword (get -set "code"))
+                   (com/kebab-case-keys -set)))
+          {}
+          (->> (slurp path)
+               (json/read-value))))
+
+(defn- write-edn!
+  [path m]
+  (spit (io/file path) (prn-str m)))
+
+(comment
+  (->> (generate-set-list "/Users/cody/Downloads/SetList.json")
+       (write-edn! "resources/set-list.edn"))
+  (->> (generate-card-index "/Users/cody/Downloads/AllPrintings.json")
+       (write-edn! "resources/card-index.edn"))
+  (->> (generate-set-index "/Users/cody/Downloads/AllPrintings.json")
+       (write-edn! "resources/set-index.edn")))

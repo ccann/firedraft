@@ -74,11 +74,21 @@
            {:on-change #(set-draft-type! % session)}
            [:div.select
             [:select
-             [:option "booster"]]]]]
-         (when (contains? (get-in @session [:game :opts]) :booster)
-           [:div [:label.label "Sets"]
-            [:div.field.is-grouped
-             (pack-controls session)]])])
+             [:option "booster"]
+             [:option "cube"]]]]]
+         (cond (contains? (get-in @session [:game :opts]) :booster)
+               [:div [:label.label "Sets"]
+                [:div.field.is-grouped
+                 (pack-controls session)]]
+
+               (contains? (get-in @session [:game :opts]) :cube)
+               [:div [:label.label "CubeCobra ID"]
+                [:div.field.is-grouped
+                 [:div.control
+                  [:input.input {:type "text"
+                                 :on-change #(swap! session assoc-in [:game :opts :cube]
+                                                    (dom/target-value %))}]]]]
+               :else nil)])
 
       [:div.field
        [:div.control

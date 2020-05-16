@@ -254,7 +254,6 @@
   (let [id ?data]
     (if-let [game (get @*games id)]
       (let [game (-> (cards/add-deck game)
-                     (cards/shuffle-deck)
                      (add-piles)
                      (increment-turn))]
         (swap! *games assoc id game)

@@ -88,7 +88,6 @@
 
 (defn add-mythic
   [pack ms]
-  (println "add mythic")
   (assoc pack :rs (take 1 ms)))
 
 (defn -create-booster
