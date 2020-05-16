@@ -36,24 +36,18 @@
 (defn set-type
   [{:keys [type]}]
   (case type
-    ("expansion" "core" "commander" "draft_innovation") 4
-    ("masters" "starter") 3
+    ("expansion" "core" "commander" "draft_innovation" "masters") 4
+    "starter"
     "dual_deck" 2
     1))
+
+(defn arena-set?
+  [{:keys [code]}]
+  (if (contains? (set g/supported-sets) (name code)) 1 0))
 
 (defn get-card
   [card-name]
   (get card-index card-name))
-
-#_((fn [card-sets]
-     (let [sets (->> (map get-set (keys card-sets))
-                     (sort-by (juxt set-type :release-date))
-                     (reverse))
-           this-set (keyword (:code (first sets)))]
-       (def cody sets)
-       (-> (get card-sets this-set)
-           (assoc :set this-set))))
-   (get-card "Kiora, Behemoth Beckoner"))
 
 (defn import-cubecobra
   [cube-id]
@@ -64,7 +58,7 @@
          (map get-card)
          (map (fn [card-sets]
                 (let [sets (->> (map get-set (keys card-sets))
-                                (sort-by (juxt set-type :release-date))
+                                (sort-by (juxt arena-set? set-type :release-date))
                                 (reverse))
                       this-set (keyword (:code (first sets)))]
                   (-> (get card-sets this-set)

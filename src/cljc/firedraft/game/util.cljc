@@ -1,7 +1,6 @@
 (ns firedraft.game.util
   (:require [clojure.string :as str]
-            [firedraft.creature-types :as ct]
-            [medley.core :refer [find-first]]))
+            [firedraft.creature-types :as ct]))
 
 (def sets
   [{:code "IKO"
