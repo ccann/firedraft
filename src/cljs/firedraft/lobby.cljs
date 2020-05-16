@@ -85,9 +85,10 @@
                [:div [:label.label "CubeCobra ID"]
                 [:div.field.is-grouped
                  [:div.control
-                  [:input.input {:type "text"
-                                 :on-change #(swap! session assoc-in [:game :opts :cube]
-                                                    (dom/target-value %))}]]]]
+                  [:input.input.is-medium
+                   {:type "text"
+                    :on-change #(swap! session assoc-in [:game :opts :cube]
+                                       (dom/target-value %))}]]]]
                :else nil)])
 
       [:div.field
