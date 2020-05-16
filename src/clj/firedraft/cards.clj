@@ -118,13 +118,21 @@
 (defn- generate-card-index
   [path]
   (reduce (fn [card-ix [set-code m]]
-            (let [cards (get m "cards")]
+            (let [cards (get m "cards")
+                  set-size (get m "baseSetSize")]
               (reduce (fn [-card-ix card]
                         (let [card-name (get card "name")]
-                          (assoc-in -card-ix [card-name (keyword set-code)]
-                                    (-> (select-keys card card-fields)
-                                        (update "number" ->Int)
-                                        (com/kebab-case-keys)))))
+                          (update-in -card-ix [card-name (keyword set-code)]
+                                     (fn [?m]
+                                       ;; add card IFF:
+                                       ;; card hasn't been added yet OR
+                                       ;; card is within bounds of base set size
+                                       (if (or (not ?m)
+                                               (<= (->Int (get card "number")) set-size))
+                                         (-> (select-keys card card-fields)
+                                             (update "number" ->Int)
+                                             (com/kebab-case-keys))
+                                         ?m)))))
                       card-ix
                       cards)))
           {}
