@@ -109,7 +109,7 @@
           [:div.field.is-grouped.buttons.are-medium.modal-buttons
            (when (and (= :pile type) ; cannot pass on a pick from the deck
                       (if (= ix 2)
-                        (< 0 (:deck-count @game))
+                        (< 1 (:deck-count @game))
                         (< 0 (get-in @game [:piles-count (inc ix)]))))
              [:button.button.is-danger
               {:on-click #(pass-pick! game ix)}
@@ -293,6 +293,7 @@
              [:h2 "Pick List"]
              [:p
               (for [line (str/split-lines (:pick-list @game))]
+                ^{:key line}
                 [:span line [:br]])]])
           (when drafting?
             (picks game))

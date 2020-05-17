@@ -47,6 +47,16 @@
 
 (defn get-card
   [card-name]
+  (let [card-sets (get card-index card-name)
+        sets (->> (map get-set (keys card-sets))
+                  (sort-by (juxt arena-set? set-type :release-date))
+                  (reverse))
+        this-set (keyword (:code (first sets)))]
+    (-> (get card-sets this-set)
+        (assoc :set this-set))))
+
+(defn get-card-all-sets
+  [card-name]
   (get card-index card-name))
 
 (defn import-cubecobra
@@ -55,14 +65,7 @@
                               cube-id))]
     (->> (:body resp)
          (str/split-lines)
-         (map get-card)
-         (map (fn [card-sets]
-                (let [sets (->> (map get-set (keys card-sets))
-                                (sort-by (juxt arena-set? set-type :release-date))
-                                (reverse))
-                      this-set (keyword (:code (first sets)))]
-                  (-> (get card-sets this-set)
-                      (assoc :set this-set))))))))
+         (map get-card))))
 
 (defn format-card
   [card]

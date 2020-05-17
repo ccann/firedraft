@@ -42,7 +42,11 @@
        (group-by first)
        (map (fn [[-name cards]]
               (let [[_ -set number] (first cards)]
-                (format "%s %s (%s) %s" (count cards) -name -set number))))
+                (format "%s %s (%s) %s"
+                        (count cards)
+                        -name
+                        (name -set)
+                        number))))
        (str/join "\n")))
 
 (defn new-id []
@@ -108,9 +112,9 @@
                    :pile {:cards (get-in game [:piles (second pickable)])})]))
     ;; TODO: if `pickable` is nil, the game is over
     (doseq [uid (:players game)]
-        (log/info :send uid :game/end)
-        (ws/send! uid [:game/end (export-picks {:game-id (:id game)
-                                                :player-id uid})]))))
+      (log/info :send uid :game/end)
+      (ws/send! uid [:game/end (export-picks {:game-id (:id game)
+                                              :player-id uid})]))))
 
 (defn- join-game-in-progress!
   [game uid reply-fn]
@@ -267,3 +271,4 @@
       (defmethod ws/handle-event :game/start [msg] (start-game msg))
       (defmethod ws/handle-event :game/pick [msg] (pick-cards msg))
       (defmethod ws/handle-event :game/pass [msg] (pass-cards msg))))
+@*games
