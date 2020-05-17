@@ -37,7 +37,7 @@
   [{:keys [type]}]
   (case type
     ("expansion" "core" "commander" "draft_innovation" "masters") 4
-    "starter"
+    "starter" 3
     "dual_deck" 2
     1))
 
