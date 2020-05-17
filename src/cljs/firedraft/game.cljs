@@ -218,7 +218,8 @@
          :on-click #(when (and my-turn? pickable?)
                       (open-picker!))}]]]]))
 
-(defn page [session]
+(defn page
+  [_match session]
   (r/with-let [game (r/cursor session [:game])]
     (let [postdraft? (:over? @game)
           drafting? (and (not postdraft?) (g/in-progress? @game))

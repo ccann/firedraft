@@ -4,7 +4,8 @@
             [firedraft.common.state :as state]
             [firedraft.ws :as ws]
             [taoensso.timbre :as log]
-            [firedraft.game.util :as g]))
+            [firedraft.game.util :as g]
+            [reitit.frontend.easy :as rfe]))
 
 (defn pack-controls
   [session]
@@ -44,7 +45,8 @@
             5000
             (fn callback [data]
               (log/info :game-created (pr-str data))
-              (swap! session assoc :game data))))
+              (swap! session assoc :game data)
+              (rfe/push-state :draft {:id (:id data)}))))
 
 (defn- set-draft-format!
   [this session]
@@ -93,10 +95,9 @@
 
       [:div.field
        [:div.control
-        [:a {:href "#/game"}
-         [:button.button.is-primary
-          {:on-click #(create-game! session)}
-          "Create Draft"]]]]]]))
+        [:button.button.is-primary
+         {:on-click #(create-game! session)}
+         "Create Draft"]]]]]))
 
 (defn open-rules-modal! [session fmt]
   (swap! session assoc :format fmt)
@@ -110,6 +111,7 @@
 (defn- join-game!
   [session game-id]
   (log/info "join game:" game-id)
+  (rfe/push-state :draft {:id game-id})
   (ws/send! [:game/join game-id]
             2000
             (fn callback [data]
@@ -190,8 +192,7 @@
              [:td (if (:joinable? game)
                     [:div.field
                      [:div.control
-                      [:a {:href "#/game"
-                           :on-click #(join-game! session (:id game))}
+                      [:a {:on-click #(join-game! session (:id game))}
                        "Join Draft"]]]
                     "Full")]
              [:td (:name game)]
@@ -200,7 +201,7 @@
               [:span.is-family-code (:id game)]]]))]]
        [:p "No drafts avaiable. How about creating one?"])]]])
 
-(defn page [session]
+(defn page [_match session]
   [:div.main
    dom/header
    (rules-modal session)

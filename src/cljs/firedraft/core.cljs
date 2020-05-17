@@ -1,52 +1,32 @@
 (ns firedraft.core
-  (:require [clojure.string :as string]
-            [firedraft.ajax :as fd.ajax]
+  (:require [firedraft.ajax :as fd.ajax]
             [firedraft.lobby :as lobby]
             [firedraft.game :as game]
             [firedraft.ws :as ws]
-            [goog.events :as events]
-            [goog.history.EventType :as HistoryEventType]
             [reagent.dom :as dom]
-            [reitit.core :as reitit]
             [firedraft.common.state :refer [session]]
             [taoensso.timbre :as log]
-            [ajax.core :as ajax])
-  (:import goog.History))
+            [ajax.core :as ajax]
+            [reitit.coercion.spec :as rss]
+            [reitit.frontend.easy :as rfe]
+            [reitit.frontend :as rf]
+            [reagent.core :as r]))
 
-(def pages
-  {:lobby #'lobby/page
-   :game #'game/page})
+(defonce match (r/atom nil))
 
 (defn page []
-  [(pages (:page @session)) session])
+  (when @match
+    (let [view (:view (:data @match))]
+      [view @match session])))
 
-
-;; -------------------------
-;; Routes
-
-(def router
-  (reitit/router
-   [["/" :lobby]
-    ["/game" :game]]))
-
-(defn match-route [uri]
-  (->> (or (not-empty (string/replace uri #"^.*#" "")) "/")
-       (reitit/match-by-path router)
-       :data
-       :name))
-;; -------------------------
-;; History
-;; must be called after routes have been defined
-(defn hook-browser-navigation! []
-  (doto (History.)
-    (events/listen
-      HistoryEventType/NAVIGATE
-      (fn [event]
-        (swap! session assoc :page (match-route (.-token event)))))
-    (.setEnabled true)))
-
-(defn mount-components []
-  (dom/render [#'page] (.getElementById js/document "app")))
+(def routes
+  [["/"
+    {:name :lobby
+     :view lobby/page}]
+   ["/draft/:id"
+    {:name :draft
+     :view game/page
+     :parameters {:path {:id string?}}}]])
 
 (defn- fetch-available-games! [session]
   (ajax/GET "/games"
@@ -56,9 +36,14 @@
                   (log/info :available-games data)
                   (swap! session assoc :games data))}))
 
+
 (defn init! []
   (ws/start-router!)
   (fd.ajax/load-interceptors!)
-  (hook-browser-navigation!)
-  (mount-components)
+  (rfe/start!
+   (rf/router routes {:data {:coercion rss/coercion}})
+   (fn [m] (reset! match m))
+   ;; set to false to enable HistoryAPI
+   {:use-fragment true})
+  (dom/render [#'page] (.getElementById js/document "app"))
   (fetch-available-games! session))
