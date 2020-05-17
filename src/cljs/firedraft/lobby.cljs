@@ -125,29 +125,31 @@
                     (close-rules-modal!))]
     [:div.modal {:id "rules-modal"}
      [:div.modal-background.has-background-black.clickable {:on-click close!}]
-     [:div.modal-content
-      (case (:format @session)
-        :winston
-        [:div.content
-         [:h2.title "Winston"]
-         [:ul
-          [:li [:p "6 boosters are shuffled together into one 90-card deck"]]
-          [:li [:p "The top 3 cards from the deck are placed face down next to it as 3 new piles of 1 card each."]]
-          [:li [:p "The first player looks at Pile 1. They may choose to draft that pile or not."]]
-          [:li [:p "If they draft it, that pile is replaced with a new face-down card from the top of the deck."]]
-          [:li [:p "If they don't draft it, they put it back and add a new card from the deck to Pile 1 and move on to Pile 2."]]
-          [:li [:p "They look at Pile 2 and decide to draft it or not, in the same way as Pile 1. If they do not draft Pile 2, move onto Pile 3."]]
-          [:li [:p "If they choose not to draft Pile 3, they must instead draft a card from the top of the deck."]]
-          [:li [:p "Continue until all 90 cards have been drafted. Construct 40-card decks and play."]]]
-         [:p [:a {:href "https://magic.wizards.com/en/articles/archive/winston-draft-2005-03-25"} "See More"]]]
+     [:div.modal-content.rules-modal
+      [:div.level
+       [:div.level-item
+        (case (:format @session)
+          :winston
+          [:div.content
+           [:h2.title "Winston"]
+           [:ul
+            [:li [:p "6 boosters are shuffled together into one 90-card deck"]]
+            [:li [:p "The top 3 cards from the deck are placed face down next to it as 3 new piles of 1 card each."]]
+            [:li [:p "The first player looks at Pile 1. They may choose to draft that pile or not."]]
+            [:li [:p "If they draft it, that pile is replaced with a new face-down card from the top of the deck."]]
+            [:li [:p "If they don't draft it, they put it back and add a new card from the deck to Pile 1 and move on to Pile 2."]]
+            [:li [:p "They look at Pile 2 and decide to draft it or not, in the same way as Pile 1. If they do not draft Pile 2, move onto Pile 3."]]
+            [:li [:p "If they choose not to draft Pile 3, they must instead draft a card from the top of the deck."]]
+            [:li [:p "Continue until all 90 cards have been drafted. Construct 40-card decks and play."]]]
+           [:p [:a {:href "https://magic.wizards.com/en/articles/archive/winston-draft-2005-03-25"} "See More"]]]
 
-        :grid
-        [:div.content
-         [:h2.title "Grid"]
-         [:p [:a {:href "https://www.youtube.com/watch?v=yelf_BB6BgY"}
-              "See More"]]]
+          :grid
+          [:div.content
+           [:h2.title "Grid"]
+           [:p [:a {:href "https://www.youtube.com/watch?v=yelf_BB6BgY"}
+                "See More"]]]
 
-        nil)]
+          nil)]]]
      [:button.modal-close.is-large
       {:on-click close!
        :aria-label "close"}]]))
@@ -159,6 +161,7 @@
    [:div.container
     [:div.content
      [:p.title "A new way for 2 players to draft online."]
+     [:p "Cube draft, booster draft and more."]
      [:p "Export your picks at the end of the draft and use them to play on MTGA."]
      [:p.subtitle "Draft Format Rules:"]
      [:ul
@@ -166,8 +169,8 @@
        [:a {:on-click #(open-rules-modal! session :winston)}
         "Winston"]]
       #_[:li
-       [:a {:on-click #(open-rules-modal! session :grid)}
-        "Grid"]]]]]])
+         [:a {:on-click #(open-rules-modal! session :grid)}
+          "Grid"]]]]]])
 
 (defn section-join-game
   [session]
