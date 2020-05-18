@@ -129,7 +129,7 @@
     [:div.tile.is-parent
      [:div.tile.is-child.picks-container
       [:div.content
-       [:h2 "Picks"]]
+       [:h2 (str "Picks (" (count picks) ")")]]
       [:div.columns.is-mobile.picks.is-variable
        (doall
         (for [i (range 5)]
@@ -296,9 +296,9 @@
               (for [line (str/split-lines (:pick-list @game))]
                 ^{:key line}
                 [:span line [:br]])]])
-          (when drafting?
+          (when (or drafting? postdraft?)
             (picks game))
-          (when drafting?
+          (when (or drafting? postdraft?)
             (sideboard game))]]]
        (when drafting?
          dom/footer)])))
