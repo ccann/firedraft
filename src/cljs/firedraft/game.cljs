@@ -71,7 +71,7 @@
      [:div.modal-content
       {:on-click close!}
       [:figure.image.zoom-view
-       [:img.card
+       [:img.card.clickable
         {:src (img-uri (:sid (:zoom-view @game-atom)))}]]]]))
 
 
@@ -91,8 +91,7 @@
            {:class (when (<= 4 (count cards)) "is-one-quarter")}
            [:figure.image
             [:img.card.modal-card
-             {:on-click #(zoom-card! game card)
-              :style #js
+             {:style #js
               {:transformOrigin
                (cond
                  (< (count cards) 3) "center center"
@@ -144,7 +143,7 @@
                 ^{:key [i j]}
                 [:figure.image.pick
                  {:on-click #(move-to-sideboard! game pick)}
-                 [:img.card.pick
+                 [:img.card.pick.clickable
                   (merge {:src (img-uri (:sid pick))}
                          (when (= (inc j) (count col-picks))
                            {:class "last-card"}))]])))]))]]]))
@@ -169,7 +168,7 @@
                 ^{:key [i j]}
                 [:figure.image.pick
                  {:on-click #(remove-from-sideboard! game pick)}
-                 [:img.card.pick
+                 [:img.card.pick.clickable
                   (merge {:src (img-uri (:sid pick))}
                          (when (= (inc j) (count col-picks))
                            {:class "last-card"}))]])))]))]]]))

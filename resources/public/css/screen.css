@@ -40,7 +40,6 @@ img.card-back.pile-card {
     border-color: rgb(23,20,15);
     border-width: 0.1px;
     border-radius: 5%;
-    cursor: pointer;
 }
 
 .card-back {
@@ -82,7 +81,6 @@ img.card-back.pile-card {
 
 .modal-card {
     border-radius: 5%;
-    transition: transform .3s;
     margin: 0 auto;
     max-width: 320px;
 }
@@ -101,11 +99,6 @@ img.card-back.pile-card {
 
 .no-padding {
     padding: 0px;
-}
-
-.modal-card:hover {
-    transform: scale(1.05);
-    z-index: 999;
 }
 
 .modal-buttons{
