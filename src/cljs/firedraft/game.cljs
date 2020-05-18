@@ -224,7 +224,7 @@
     (let [postdraft? (:over? @game)
           drafting? (and (not postdraft?) (g/in-progress? @game))
           loading? (:loading? @game)
-          predraft? (not drafting?)]
+          predraft? (and (not drafting?) (not postdraft?))]
       [:div dom/header
        [:div.section
         [:div.tile.is-ancestor
