@@ -3,6 +3,8 @@
 Draftwith.me is a realtime web application for 2-player Magic: The Gathering draft
 formats written in Clojure and ClojureScript.
 
+This is not production code. It's a hobby project.
+
 ## Prerequisites
 
 * JDK 8+
